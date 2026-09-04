@@ -2,9 +2,19 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.2
+ * Version: 0.7.3
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.3 — The v0.7.1 overflow fix wasn't complete: the Directory grid
+ * card's tagline (`.aw-card-tagline`) is a bare <span>, which is
+ * display:inline by default — and overflow/text-overflow/a constrained
+ * width all silently do nothing on an inline box. So the "ellipsis" rule
+ * was never actually taking effect; the tagline text kept running at full
+ * length underneath the price/star column instead of eliding. Given it
+ * display:block (verified live by injecting the one-line override first).
+ * The trending-strip card's tagline was unaffected — it's a <p>, block by
+ * default, already had its own line-clamp rule.
  *
  * v0.7.2 — Fixes /projects/ and /projects/{slug} losing to the site's
  * News-page rule again, despite the v0.3.x priority fix still being intact
@@ -127,7 +137,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.2' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.3' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

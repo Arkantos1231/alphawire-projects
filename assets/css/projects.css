@@ -420,6 +420,11 @@
 }
 
 .aw-card-tagline {
+	/* A bare <span> is display:inline by default — overflow/text-overflow/
+	   a constrained width all silently do nothing on an inline box, which
+	   is what let this text run under the price column instead of eliding.
+	   Needs to be a block (or inline-block) for any of that to apply. */
+	display: block;
 	font-size: 12px;
 	color: var(--aw-muted);
 	overflow: hidden;
