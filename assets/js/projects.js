@@ -54,6 +54,36 @@
 ( function () {
 	'use strict';
 
+	function filterCoverage( filter ) {
+		var section = filter.closest( '.aw-coverage-section' );
+		if ( ! section ) {
+			return;
+		}
+
+		var selected = filter.getAttribute( 'data-aw-coverage-filter' );
+		section.querySelectorAll( '[data-aw-coverage-filter]' ).forEach( function ( item ) {
+			var active = item.getAttribute( 'data-aw-coverage-filter' ) === selected;
+			item.classList.toggle( 'is-active', active );
+			item.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
+		} );
+
+		section.querySelectorAll( '[data-aw-coverage-group]' ).forEach( function ( group ) {
+			var visible = 'all' === selected || group.getAttribute( 'data-aw-coverage-group' ) === selected;
+			group.hidden = ! visible;
+		} );
+	}
+
+	document.addEventListener( 'click', function ( e ) {
+		var filter = e.target.closest( '[data-aw-coverage-filter]' );
+		if ( filter ) {
+			filterCoverage( filter );
+		}
+	} );
+} )();
+
+( function () {
+	'use strict';
+
 	if ( 'undefined' === typeof window.AlphaWireProjects ) {
 		return;
 	}

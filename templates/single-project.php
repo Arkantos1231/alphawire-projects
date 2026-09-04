@@ -170,19 +170,28 @@ while ( have_posts() ) :
 				<?php endif; ?>
 
 				<?php if ( $coverage_by_type ) : ?>
-					<section class="aw-section">
+					<section class="aw-section aw-panel aw-coverage-section">
 				<div class="aw-section-header">
 					<h2>Latest from AlphaWire</h2>
-					<p class="aw-hint">Coverage tagged to <?php echo esc_html( $project['name'] ); ?> appears here automatically.</p>
+					<div class="aw-coverage-filters" role="group" aria-label="Filter AlphaWire coverage">
+						<button type="button" class="aw-coverage-filter is-active" data-aw-coverage-filter="all">All</button>
+						<?php foreach ( array_keys( $coverage_by_type ) as $type ) : ?>
+							<button type="button" class="aw-coverage-filter" data-aw-coverage-filter="<?php echo esc_attr( sanitize_title( $type ) ); ?>"><?php echo esc_html( $type ); ?></button>
+						<?php endforeach; ?>
+					</div>
 				</div>
 				<?php foreach ( $coverage_by_type as $type => $items ) : ?>
-					<div class="aw-coverage-group aw-section" style="margin-top:16px;">
-						<h3><?php echo esc_html( $type ); ?></h3>
+						<div class="aw-coverage-group" data-aw-coverage-group="<?php echo esc_attr( sanitize_title( $type ) ); ?>">
 						<div class="aw-grid">
 							<?php foreach ( $items as $item ) : ?>
 								<a class="aw-panel-hover aw-coverage-item" href="<?php echo esc_url( $item['url'] ); ?>">
-									<span class="aw-cov-thumb" <?php echo $item['image'] ? 'style="background-image:url(' . esc_url( $item['image'] ) . ')"' : ''; ?>></span>
-									<span>
+									<?php if ( ! empty( $item['image'] ) ) : ?>
+										<img class="aw-cov-thumb" src="<?php echo esc_url( $item['image'] ); ?>" alt="" />
+									<?php else : ?>
+										<span class="aw-cov-thumb" aria-hidden="true"></span>
+									<?php endif; ?>
+									<span class="aw-cov-content">
+										<span class="aw-cov-type"><?php echo esc_html( $type ); ?></span>
 										<span class="aw-cov-title"><?php echo esc_html( $item['title'] ); ?></span>
 										<?php if ( ! empty( $item['excerpt'] ) ) : ?>
 											<span class="aw-cov-excerpt"><?php echo esc_html( wp_strip_all_tags( $item['excerpt'] ) ); ?></span>
@@ -199,7 +208,44 @@ while ( have_posts() ) :
 			</div>
 
 			<div class="aw-profile-tab-panel" id="aw-panel-timeline" role="tabpanel" aria-labelledby="aw-tab-timeline" data-aw-profile-panel="timeline" hidden></div>
-			<div class="aw-profile-tab-panel" id="aw-panel-coverage" role="tabpanel" aria-labelledby="aw-tab-coverage" data-aw-profile-panel="coverage" hidden></div>
+			<div class="aw-profile-tab-panel" id="aw-panel-coverage" role="tabpanel" aria-labelledby="aw-tab-coverage" data-aw-profile-panel="coverage" hidden>
+				<?php if ( $coverage_by_type ) : ?>
+					<section class="aw-section aw-panel aw-coverage-section">
+						<div class="aw-section-header">
+							<h2>Latest from AlphaWire</h2>
+							<div class="aw-coverage-filters" role="group" aria-label="Filter AlphaWire coverage">
+								<button type="button" class="aw-coverage-filter is-active" data-aw-coverage-filter="all">All</button>
+								<?php foreach ( array_keys( $coverage_by_type ) as $type ) : ?>
+									<button type="button" class="aw-coverage-filter" data-aw-coverage-filter="<?php echo esc_attr( sanitize_title( $type ) ); ?>"><?php echo esc_html( $type ); ?></button>
+								<?php endforeach; ?>
+							</div>
+						</div>
+						<?php foreach ( $coverage_by_type as $type => $items ) : ?>
+							<div class="aw-coverage-group" data-aw-coverage-group="<?php echo esc_attr( sanitize_title( $type ) ); ?>">
+								<div class="aw-grid">
+									<?php foreach ( $items as $item ) : ?>
+										<a class="aw-panel-hover aw-coverage-item" href="<?php echo esc_url( $item['url'] ); ?>">
+											<?php if ( ! empty( $item['image'] ) ) : ?>
+												<img class="aw-cov-thumb" src="<?php echo esc_url( $item['image'] ); ?>" alt="" />
+											<?php else : ?>
+												<span class="aw-cov-thumb" aria-hidden="true"></span>
+											<?php endif; ?>
+											<span class="aw-cov-content">
+												<span class="aw-cov-type"><?php echo esc_html( $type ); ?></span>
+												<span class="aw-cov-title"><?php echo esc_html( $item['title'] ); ?></span>
+												<?php if ( ! empty( $item['excerpt'] ) ) : ?>
+													<span class="aw-cov-excerpt"><?php echo esc_html( wp_strip_all_tags( $item['excerpt'] ) ); ?></span>
+												<?php endif; ?>
+												<span class="aw-cov-date"><?php echo esc_html( $item['date'] ?? '' ); ?></span>
+											</span>
+										</a>
+									<?php endforeach; ?>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</section>
+				<?php endif; ?>
+			</div>
 			<div class="aw-profile-tab-panel" id="aw-panel-research" role="tabpanel" aria-labelledby="aw-tab-research" data-aw-profile-panel="research" hidden></div>
 
 			<div class="aw-profile-tab-panel" id="aw-panel-related" role="tabpanel" aria-labelledby="aw-tab-related" data-aw-profile-panel="related" hidden>
