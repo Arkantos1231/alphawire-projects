@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.8
+ * Version: 0.7.9
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.9 — Fixed a route collision that made
+ * /projects/trending, /projects/recently-launched,
+ * /projects/recently-updated and /projects/editors-picks all 404 with
+ * {"code":"not_found","message":"Project not found"}. WP_REST_Server
+ * matches routes in registration order and stops at the first regex
+ * that fits the path; AlphaWire_Projects_REST's single-project catch-all
+ * "/projects/{slug}" (pattern [a-zA-Z0-9-]+) was being registered before
+ * AlphaWire_Projects_Directory_REST's specific "/projects/..." routes,
+ * so a request for "/projects/trending" matched the catch-all first,
+ * treated "trending" as a slug, found no such Project, and 404'd before
+ * Directory REST's own route ever got a chance. Fixed by registering
+ * Directory REST at priority 5 and the single-project REST at priority
+ * 20 on rest_api_init, so the specific routes are always added — and
+ * therefore matched — first. See alphawire-projects.php's constructor.
  *
  * v0.7.8 — A one-click "Check for updates" link on this plugin's row on
  * the Plugins page (next to Deactivate). Before this, picking up a fresh
@@ -198,7 +213,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.8' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.9' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -245,8 +260,16 @@ final class AlphaWire_Projects {
 		add_action( 'acf/init', array( 'AlphaWire_Projects_Fields', 'register' ) );
 		add_action( 'acf/init', array( 'AlphaWire_Projects_Content_Relationships', 'register_fields' ) );
 
-		add_action( 'rest_api_init', array( 'AlphaWire_Projects_REST', 'register_routes' ) );
-		add_action( 'rest_api_init', array( 'AlphaWire_Projects_Directory_REST', 'register_routes' ) );
+		// Order matters here, not just readability: WP_REST_Server matches
+		// routes in registration order and stops at the first regex that
+		// matches the path. AlphaWire_Projects_REST registers the catch-all
+		// "/projects/{slug}" pattern, which also matches literal segments
+		// like "trending" or "recently-launched" (both fit
+		// [a-zA-Z0-9-]+) — so the Directory REST's specific "/projects/..."
+		// routes MUST be registered first, or they get shadowed by the
+		// single-project endpoint and 404 with "Project not found".
+		add_action( 'rest_api_init', array( 'AlphaWire_Projects_Directory_REST', 'register_routes' ), 5 );
+		add_action( 'rest_api_init', array( 'AlphaWire_Projects_REST', 'register_routes' ), 20 );
 
 		AlphaWire_Projects_Activity::hooks();
 		AlphaWire_Projects_Market_Data_Service::instance()->hooks();

@@ -4,7 +4,7 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.7.8 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.7.9 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
 ## de Lovable (incluye Collections, fuera del plan original)
 
@@ -215,6 +215,16 @@ consume estos:
   `/narratives` — endpoints de Directory (`class-directory-rest-api.php`).
 - `GET/POST/DELETE /collections...` — Collections del usuario logueado
   (`class-collections.php`).
+
+**Orden de registro importa** (v0.7.9): WordPress matchea rutas REST en el
+orden en que se registraron y se queda con la primera que matchea. El
+catch-all de un solo proyecto (`/projects/{slug}`, patrón
+`[a-zA-Z0-9-]+`) también matchea literales como `trending` o
+`recently-launched` — si se registra antes que las rutas específicas de
+Directory, se las come a todas (404 "Project not found"). Por eso
+`AlphaWire_Projects_Directory_REST::register_routes()` está enganchado en
+`rest_api_init` con prioridad 5 y `AlphaWire_Projects_REST::register_routes()`
+con prioridad 20 — las rutas específicas siempre se registran primero.
 
 Cuando alguno de estos endpoints tiene que devolver precio/market cap/etc.,
 arma esa parte del JSON llamando internamente a
