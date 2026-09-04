@@ -2,9 +2,22 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.5
+ * Version: 0.7.6
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.6 — v0.7.5 didn't finish the job: the star still showed a pink
+ * 1px border and a 52x42px box (instead of a plain 18px icon) after that
+ * update went live. A second, separate theme rule was the cause — a
+ * global form-control reset, `[type="button"], [type="submit"], button {
+ * border:1px solid #c36; padding:.5rem 1rem; }`. Our button has
+ * `type="button"`, so `[type="button"]` matches it at exactly the same
+ * specificity as a bare `.aw-save-btn` (one class-tier selector each) —
+ * a tie that the theme's stylesheet won simply by loading later. Same
+ * fix as the SVG fill/stroke override in v0.7.5: qualify with the
+ * plugin's own .aw-projects wrapper so it's unambiguously 2 classes vs.
+ * their 1, rather than relying on a tie that depends on load order.
+ * Confirmed live via getComputedStyle before shipping.
  *
  * v0.7.5 — The save/favorite star looked wrong everywhere it appeared
  * (Directory grid, Trending strip, Project profile): a bordered circle
@@ -164,7 +177,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.5' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.6' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

@@ -608,8 +608,20 @@
  * simply out-specifying it (3 classes beats their 2, full stop, no need to
  * match their type-selector count) by qualifying every rule below with the
  * plugin's own .aw-projects wrapper, which every one of these pages has.
+ *
+ * A second, separate theme rule bit the button element itself, even after
+ * the above: `[type="button"], [type="submit"], button { border:1px solid
+ * #c36; padding:.5rem 1rem; }` — a global form-control reset. Our button
+ * has `type="button"` (see aw_projects_save_button() in
+ * template-functions.php), so `[type="button"]` matches it, and an
+ * attribute selector is the same specificity tier as a class — so a bare
+ * `.aw-save-btn { border:none }` only *ties* it, and whichever stylesheet
+ * loads later wins that tie (the theme's did). Confirmed live via
+ * getComputedStyle: a 52x42px box with a pink 1px border, nothing like the
+ * plain 18px icon this was supposed to be. Same fix as above — qualify
+ * with .aw-projects so it's unambiguously 2 classes vs. their 1.
  */
-.aw-save-btn {
+.aw-projects .aw-save-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -633,7 +645,7 @@
 	transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
-.aw-save-btn.is-saved {
+.aw-projects .aw-save-btn.is-saved {
 	color: var(--aw-accent);
 }
 
@@ -641,7 +653,7 @@
 	fill: currentColor !important;
 }
 
-.aw-save-btn:hover {
+.aw-projects .aw-save-btn:hover {
 	color: var(--aw-accent);
 }
 
