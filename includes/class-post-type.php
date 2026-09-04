@@ -9,7 +9,7 @@ class AlphaWire_Projects_Post_Type {
 
 	// Bump this whenever register_top_priority_rewrites() changes shape —
 	// it drives the one-time self-healing flush in maybe_flush_rewrite_rules().
-	const REWRITE_VERSION = 4;
+	const REWRITE_VERSION = 5;
 
 	public static function register() {
 		register_post_type(
@@ -78,6 +78,12 @@ class AlphaWire_Projects_Post_Type {
 	public static function register_top_priority_rewrites() {
 		add_action( 'generate_rewrite_rules', array( __CLASS__, 'prepend_rewrite_rules' ), PHP_INT_MAX );
 		add_filter( 'rewrite_rules_array', array( __CLASS__, 'prepend_to_rules_array' ), PHP_INT_MAX );
+		add_filter( 'query_vars', array( __CLASS__, 'register_query_vars' ) );
+	}
+
+	public static function register_query_vars( $vars ) {
+		$vars[] = 'aw_projects_view';
+		return $vars;
 	}
 
 	public static function prepend_rewrite_rules( $wp_rewrite ) {
@@ -90,8 +96,12 @@ class AlphaWire_Projects_Post_Type {
 
 	private static function top_rules() {
 		return array(
-			'^projects/([^/]+)/?$' => 'index.php?' . self::POST_TYPE . '=$matches[1]',
-			'^projects/?$'         => 'index.php?post_type=' . self::POST_TYPE,
+			// Must come before the single-Project catch-all below, or a
+			// visit to /projects/collections/ would be parsed as a Project
+			// whose slug is "collections" instead.
+			'^projects/collections/?$' => 'index.php?aw_projects_view=collections',
+			'^projects/([^/]+)/?$'     => 'index.php?' . self::POST_TYPE . '=$matches[1]',
+			'^projects/?$'             => 'index.php?post_type=' . self::POST_TYPE,
 		);
 	}
 

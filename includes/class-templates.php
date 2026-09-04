@@ -22,7 +22,33 @@ class AlphaWire_Projects_Templates {
 	public static function hooks() {
 		add_filter( 'single_template', array( __CLASS__, 'single_project_template' ) );
 		add_filter( 'archive_template', array( __CLASS__, 'archive_project_template' ) );
+		add_filter( 'template_include', array( __CLASS__, 'collections_template' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+	}
+
+	/**
+	 * "My Collections" isn't a Project itself, so it has no post to hang
+	 * single_template/archive_template off of — it's routed purely by the
+	 * aw_projects_view=collections query var (see class-post-type.php's
+	 * top_rules()), which needs the broader template_include filter.
+	 */
+	public static function collections_template( $template ) {
+		if ( 'collections' === get_query_var( 'aw_projects_view' ) ) {
+			$custom = ALPHAWIRE_PROJECTS_PATH . 'templates/collections.php';
+			if ( file_exists( $custom ) ) {
+				// This query var isn't a post/page WP_Query recognises, so
+				// the main query can come back flagged is_404 — correct
+				// that before anything (the theme, Rank Math, etc.) reads
+				// it, same as a normal WP custom-page route would need to.
+				global $wp_query;
+				if ( $wp_query instanceof WP_Query ) {
+					$wp_query->is_404 = false;
+				}
+				status_header( 200 );
+				return $custom;
+			}
+		}
+		return $template;
 	}
 
 	public static function single_project_template( $template ) {
@@ -46,12 +72,42 @@ class AlphaWire_Projects_Templates {
 	}
 
 	public static function enqueue_assets() {
-		if ( is_singular( AlphaWire_Projects_Post_Type::POST_TYPE ) || is_post_type_archive( AlphaWire_Projects_Post_Type::POST_TYPE ) ) {
-			wp_enqueue_style(
+		$is_plugin_page = is_singular( AlphaWire_Projects_Post_Type::POST_TYPE )
+			|| is_post_type_archive( AlphaWire_Projects_Post_Type::POST_TYPE )
+			|| 'collections' === get_query_var( 'aw_projects_view' );
+
+		if ( ! $is_plugin_page ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'alphawire-projects',
+			ALPHAWIRE_PROJECTS_URL . 'assets/css/projects.css',
+			array(),
+			ALPHAWIRE_PROJECTS_VERSION
+		);
+
+		// The save-star + Collections modal is the plugin's first bit of
+		// front-end JS (everything else here is deliberately server-
+		// rendered) — it only does anything for a logged-in user, so it's
+		// enqueued everywhere on these pages but no-ops instantly for an
+		// anonymous visitor (their star is a plain login link, no JS
+		// needed at all — see aw_projects_save_button()).
+		if ( is_user_logged_in() ) {
+			wp_enqueue_script(
 				'alphawire-projects',
-				ALPHAWIRE_PROJECTS_URL . 'assets/css/projects.css',
+				ALPHAWIRE_PROJECTS_URL . 'assets/js/projects.js',
 				array(),
-				ALPHAWIRE_PROJECTS_VERSION
+				ALPHAWIRE_PROJECTS_VERSION,
+				true
+			);
+			wp_localize_script(
+				'alphawire-projects',
+				'AlphaWireProjects',
+				array(
+					'restUrl' => esc_url_raw( rest_url( AlphaWire_Projects_REST::NAMESPACE ) ),
+					'nonce'   => wp_create_nonce( 'wp_rest' ),
+				)
 			);
 		}
 	}

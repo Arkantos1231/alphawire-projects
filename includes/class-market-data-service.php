@@ -205,6 +205,7 @@ class AlphaWire_Projects_Market_Data_Service {
 				: null,
 			'marketCap'         => $usd( $market_data['market_cap']['usd'] ?? null ),
 			'volume24h'         => $usd( $market_data['total_volume']['usd'] ?? null ),
+			'volume24hRaw'      => isset( $market_data['total_volume']['usd'] ) ? (float) $market_data['total_volume']['usd'] : null,
 			'circulatingSupply' => isset( $market_data['circulating_supply'] )
 				? number_format( (float) $market_data['circulating_supply'] )
 				: null,
@@ -224,6 +225,7 @@ class AlphaWire_Projects_Market_Data_Service {
 			'change24h'         => null,
 			'marketCap'         => null,
 			'volume24h'         => null,
+			'volume24hRaw'      => null,
 			'circulatingSupply' => null,
 			'totalSupply'       => null,
 			'allTimeHigh'       => null,

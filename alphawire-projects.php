@@ -2,9 +2,23 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.6.1
+ * Version: 0.7.0
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.0 — Directory restyled to match the Lovable prototype's layout
+ * (left sidebar: Explore nav + Categories + a Collections CTA; search
+ * moved to the header; a numbered Trending Projects strip with real 24h
+ * volume from CoinGecko), plus the "Create a collection" feature the
+ * build plan explicitly left out of Phase 3 — added now at product's
+ * request, on top of the site's existing reader login (Thirdweb Auth SSO
+ * already creates/maps a real WP user; nothing new to authenticate).
+ * Readers get named, multi-project Collections via a star on every card,
+ * a My Collections page at /projects/collections/, user-meta storage and
+ * a small authenticated REST surface (see includes/class-collections.php)
+ * — no new database tables. Top Categories/Trending Narratives now also
+ * carry a real average-24h-change percentage next to each term, matching
+ * the Lovable look with real data instead of its mocked figure.
  *
  * v0.6.1 — "Trending Narratives" now matches the build plan's decision log:
  * `topic` also holds entity-style terms (Tether, Circle, Ripple,
@@ -92,7 +106,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.6.1' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.0' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -111,6 +125,7 @@ require_once ALPHAWIRE_PROJECTS_PATH . 'includes/template-functions.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-templates.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-csv-importer.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-updater.php';
+require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-collections.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-activator.php';
 
 final class AlphaWire_Projects {
@@ -151,6 +166,7 @@ final class AlphaWire_Projects {
 		AlphaWire_Projects_Templates::hooks();
 		AlphaWire_Projects_CSV_Importer::hooks();
 		AlphaWire_Projects_Updater::hooks();
+		AlphaWire_Projects_Collections::hooks();
 	}
 }
 

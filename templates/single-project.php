@@ -37,6 +37,7 @@ while ( have_posts() ) :
 
 			<div class="aw-profile-identity">
 				<?php aw_projects_logo( $project, 96 ); ?>
+				<div class="aw-profile-save"><?php aw_projects_save_button( $project['id'] ); ?></div>
 				<div>
 					<?php if ( ! empty( $project['categories'] ) ) : ?>
 						<p class="aw-eyebrow"><?php echo esc_html( implode( ' · ', $project['categories'] ) ); ?></p>
@@ -208,5 +209,9 @@ while ( have_posts() ) :
 
 	<?php
 endwhile;
+
+if ( is_user_logged_in() ) {
+	aw_projects_render_collection_modal();
+}
 
 get_footer();

@@ -258,6 +258,15 @@ class AlphaWire_Projects_Directory_REST {
 		return self::term_usage( 'topic', AlphaWire_Projects_Settings::get_narrative_exclusions() );
 	}
 
+	/**
+	 * `change24h` here is real, not the Lovable prototype's mocked "▲X%" —
+	 * it's the average of the cached 24h price change across every Project
+	 * tagged with that term (null if none has market data yet). Ranking
+	 * stays by Project count, matching the existing "Top"/"Trending" =
+	 * most-used decision; the percentage is a display value, not the sort
+	 * key, so a term with 1 volatile Project can't outrank one 10 editors
+	 * actually use.
+	 */
 	private static function term_usage( $taxonomy, array $excluded_names = array() ) {
 		$terms = get_terms( array(
 			'taxonomy'   => $taxonomy,
@@ -274,10 +283,10 @@ class AlphaWire_Projects_Directory_REST {
 				continue;
 			}
 
-			$count_query = new WP_Query( array(
+			$query = new WP_Query( array(
 				'post_type'      => AlphaWire_Projects_Post_Type::POST_TYPE,
 				'post_status'    => 'publish',
-				'posts_per_page' => 1,
+				'posts_per_page' => -1,
 				'fields'         => 'ids',
 				'tax_query'      => array(
 					array(
@@ -288,13 +297,25 @@ class AlphaWire_Projects_Directory_REST {
 				),
 			) );
 
-			if ( $count_query->found_posts > 0 ) {
-				$results[] = array(
-					'label' => $term->name,
-					'slug'  => $term->slug,
-					'count' => $count_query->found_posts,
-				);
+			if ( ! $query->posts ) {
+				continue;
 			}
+
+			$changes = array();
+			foreach ( $query->posts as $project_id ) {
+				$coingecko_id = function_exists( 'get_field' ) ? get_field( 'coingecko_id', $project_id ) : get_post_meta( $project_id, 'coingecko_id', true );
+				$market       = AlphaWire_Projects_Market_Data_Service::instance()->get_cached_market_data( $coingecko_id );
+				if ( null !== $market['change24h'] ) {
+					$changes[] = (float) $market['change24h'];
+				}
+			}
+
+			$results[] = array(
+				'label'     => $term->name,
+				'slug'      => $term->slug,
+				'count'     => count( $query->posts ),
+				'change24h' => $changes ? round( array_sum( $changes ) / count( $changes ), 2 ) : null,
+			);
 		}
 
 		usort(
@@ -305,6 +326,15 @@ class AlphaWire_Projects_Directory_REST {
 		);
 
 		return $results;
+	}
+
+	/**
+	 * Public entry point for other classes that need the same lightweight
+	 * card shape (e.g. Collections rendering a user's saved Projects)
+	 * without duplicating this mapping.
+	 */
+	public static function card_public( $post ) {
+		return self::card( $post );
 	}
 
 	/**
@@ -325,6 +355,7 @@ class AlphaWire_Projects_Directory_REST {
 			'categories' => wp_get_post_terms( $post->ID, 'pillar', array( 'fields' => 'names' ) ),
 			'price'      => $market['price'],
 			'change24h'  => $market['change24h'],
+			'volume24h'  => $market['volume24hRaw'],
 		);
 	}
 }

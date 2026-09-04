@@ -56,7 +56,8 @@
 	display: block;
 }
 
-.aw-projects a.aw-panel-hover:hover {
+.aw-projects a.aw-panel-hover:hover,
+.aw-projects .aw-panel-hover:hover {
 	border-color: var(--aw-border-strong);
 }
 
@@ -141,6 +142,125 @@
 
 /* ---------------- Directory ---------------- */
 
+.aw-directory {
+	display: grid;
+	grid-template-columns: 220px minmax(0, 1fr);
+	gap: 32px;
+	align-items: start;
+}
+
+@media (max-width: 860px) {
+	.aw-directory {
+		grid-template-columns: 1fr;
+	}
+}
+
+.aw-sidebar {
+	position: sticky;
+	top: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+}
+
+@media (max-width: 860px) {
+	.aw-sidebar {
+		position: static;
+	}
+}
+
+.aw-sidebar-heading {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--aw-muted);
+	margin-bottom: 8px;
+	padding: 0 10px;
+}
+
+.aw-nav-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	border-radius: var(--aw-radius);
+	font-size: 13px;
+	color: var(--aw-text);
+}
+
+.aw-nav-item:hover {
+	background: var(--aw-surface);
+}
+
+.aw-nav-item.is-active {
+	background: var(--aw-surface);
+	color: var(--aw-accent);
+	font-weight: 600;
+}
+
+.aw-nav-icon {
+	display: inline-block;
+	width: 16px;
+	text-align: center;
+	margin-right: 6px;
+	opacity: 0.85;
+}
+
+.aw-collection-cta {
+	border: 1px solid var(--aw-border);
+	border-radius: var(--aw-radius);
+	background: var(--aw-surface);
+	padding: 14px;
+}
+
+.aw-collection-cta strong {
+	display: block;
+	font-size: 13px;
+	margin-bottom: 4px;
+}
+
+.aw-collection-cta p {
+	margin: 0 0 12px;
+	font-size: 12px;
+	color: var(--aw-muted);
+	line-height: 1.5;
+}
+
+.aw-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--aw-accent);
+	color: #14161a;
+	border: none;
+	border-radius: var(--aw-radius);
+	padding: 8px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.aw-btn-ghost {
+	background: transparent;
+	color: var(--aw-text);
+	border: 1px solid var(--aw-border-strong);
+	width: 100%;
+}
+
+.aw-sidebar-link {
+	display: block;
+	margin-top: 10px;
+	font-size: 12px;
+	color: var(--aw-accent);
+	text-align: center;
+}
+
+.aw-directory-main {
+	min-width: 0;
+}
+
 .aw-directory-head {
 	display: flex;
 	flex-wrap: wrap;
@@ -161,6 +281,37 @@
 	color: var(--aw-muted);
 	font-size: 13px;
 	max-width: 560px;
+}
+
+.aw-searchbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--aw-surface);
+	border: 1px solid var(--aw-border);
+	border-radius: 999px;
+	padding: 8px 8px 8px 16px;
+	flex: 0 1 380px;
+}
+
+.aw-searchbar input[type="text"] {
+	flex: 1;
+	background: transparent;
+	border: none;
+	color: var(--aw-text);
+	font-size: 13px;
+	outline: none;
+}
+
+.aw-searchbar button {
+	background: var(--aw-surface-2);
+	border: none;
+	color: var(--aw-muted);
+	border-radius: 50%;
+	width: 28px;
+	height: 28px;
+	cursor: pointer;
+	font-size: 14px;
 }
 
 .aw-filters {
@@ -209,10 +360,21 @@
 }
 
 .aw-card {
+	position: relative;
+	padding: 0;
+}
+
+.aw-card-link {
 	padding: 14px;
 	display: flex;
 	gap: 12px;
 	align-items: center;
+}
+
+.aw-card .aw-save-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
 }
 
 .aw-card .aw-logo {
@@ -267,63 +429,268 @@
 	margin-bottom: 2px;
 }
 
-.aw-strip {
+.aw-trend-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 10px;
+}
+
+.aw-trend-card {
+	position: relative;
+	padding: 0;
+}
+
+.aw-trend-link {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	gap: 2px;
+}
+
+.aw-trend-top {
+	display: flex;
+	align-items: center;
 	gap: 8px;
-}
-
-.aw-strip-card {
-	padding: 12px;
-	text-align: center;
-}
-
-.aw-strip-card .aw-rank {
-	display: inline-block;
-	background: var(--aw-surface-2);
-	border-radius: 3px;
-	padding: 1px 6px;
-	font-size: 10px;
-	color: var(--aw-muted);
 	margin-bottom: 8px;
 }
 
-.aw-strip-card .aw-logo {
-	width: 40px;
-	height: 40px;
+.aw-rank {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	background: var(--aw-surface-2);
+	border-radius: 3px;
+	padding: 0 4px;
+	font-size: 10px;
+	color: var(--aw-muted);
+}
+
+.aw-trend-link .aw-logo {
+	width: 44px;
+	height: 44px;
+	font-size: 15px;
+}
+
+.aw-trend-link .aw-name {
 	font-size: 14px;
-	margin: 0 auto 8px;
-}
-
-.aw-strip-card .aw-name {
-	font-size: 13px;
 	font-weight: 600;
-	display: block;
 }
 
-.aw-strip-card .aw-ticker {
+.aw-trend-link .aw-ticker {
 	font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
 	font-size: 10px;
 	color: var(--aw-muted);
 	text-transform: uppercase;
 }
 
-.aw-four-col {
+.aw-trend-tagline {
+	font-size: 12px;
+	color: var(--aw-muted);
+	margin: 6px 0 0;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	line-height: 1.4;
+}
+
+.aw-trend-foot {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 10px;
+}
+
+.aw-trend-volume {
+	font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+	font-size: 11px;
+	color: var(--aw-muted);
+}
+
+.aw-trend-card .aw-save-btn {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+
+.aw-two-col {
 	display: grid;
 	gap: 10px;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(2, 1fr);
 }
 
-@media (max-width: 900px) {
-	.aw-four-col {
-		grid-template-columns: repeat(2, 1fr);
-	}
-}
-
-@media (max-width: 560px) {
-	.aw-four-col {
+@media (max-width: 700px) {
+	.aw-two-col {
 		grid-template-columns: 1fr;
 	}
+}
+
+/* ---------------- Save button + Collections modal ---------------- */
+
+.aw-save-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: rgba(20, 22, 26, 0.55);
+	border: 1px solid var(--aw-border);
+	color: var(--aw-muted);
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.aw-save-btn.is-saved {
+	color: var(--aw-accent);
+	border-color: rgba(200, 243, 35, 0.4);
+}
+
+.aw-save-btn:hover {
+	color: var(--aw-accent);
+}
+
+.aw-profile-save {
+	margin: 8px 0 0;
+}
+
+.aw-profile-save .aw-save-btn {
+	position: static;
+	width: auto;
+	height: auto;
+	border-radius: var(--aw-radius);
+	padding: 6px 12px;
+	gap: 6px;
+	font-size: 12px;
+}
+
+.aw-profile-save .aw-save-btn::after {
+	content: " Save";
+}
+
+.aw-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.aw-modal[hidden] {
+	display: none;
+}
+
+.aw-modal-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(10, 12, 14, 0.6);
+}
+
+.aw-modal-panel {
+	position: relative;
+	width: min(360px, calc(100vw - 32px));
+	max-height: min(70vh, 480px);
+	overflow-y: auto;
+	background: var(--aw-surface);
+	border: 1px solid var(--aw-border-strong);
+	border-radius: var(--aw-radius);
+	padding: 18px;
+	color: var(--aw-text);
+	font-family: inherit;
+}
+
+.aw-modal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.aw-modal-head h3 {
+	font-size: 14px;
+	margin: 0;
+}
+
+.aw-modal-close {
+	background: none;
+	border: none;
+	color: var(--aw-muted);
+	font-size: 18px;
+	cursor: pointer;
+	line-height: 1;
+}
+
+.aw-modal-list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin-bottom: 14px;
+}
+
+.aw-collection-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 4px;
+	font-size: 13px;
+	border-bottom: 1px solid var(--aw-border);
+	cursor: pointer;
+}
+
+.aw-collection-row span:first-of-type {
+	flex: 1;
+}
+
+.aw-collection-row:last-child {
+	border-bottom: none;
+}
+
+.aw-modal-new {
+	display: flex;
+	gap: 6px;
+}
+
+.aw-modal-new input[type="text"] {
+	flex: 1;
+	background: var(--aw-surface-2);
+	border: 1px solid var(--aw-border);
+	color: var(--aw-text);
+	border-radius: var(--aw-radius);
+	padding: 8px 10px;
+	font-size: 12px;
+}
+
+.aw-modal-error {
+	color: var(--aw-negative);
+	font-size: 12px;
+	margin: 10px 0 0;
+}
+
+/* ---------------- My Collections ---------------- */
+
+.aw-collections-toolbar {
+	margin-top: 20px;
+}
+
+.aw-collections-toolbar .aw-btn {
+	width: auto;
+	padding: 9px 16px;
+}
+
+.aw-collection-actions {
+	display: flex;
+	gap: 12px;
+}
+
+.aw-collection-actions button {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
 }
 
 .aw-list-row {
