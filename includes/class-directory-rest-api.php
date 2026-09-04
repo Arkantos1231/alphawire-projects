@@ -248,17 +248,17 @@ class AlphaWire_Projects_Directory_REST {
 	}
 
 	/**
-	 * "Trending Narratives": topic terms actually used on a Project. `topic`
-	 * also holds entity-style terms (Tether, Circle, Kalshi…) that aren't
-	 * narratives — restricting to "used on >=1 Project" lets the list
-	 * emerge from what editors actually tag, instead of us hand-picking an
-	 * allowlist. See the build plan's decision log.
+	 * "Trending Narratives": topic terms actually used on a Project, minus
+	 * the entity-style terms (Tether, Circle, Kalshi…) the build plan
+	 * flagged as "not narratives, needs filtering" — that filter is the
+	 * editable exclusion list at Projects → Settings → Directory —
+	 * Narratives, not a hand-picked allowlist baked into this file.
 	 */
 	public static function narratives( $request ) {
-		return self::term_usage( 'topic' );
+		return self::term_usage( 'topic', AlphaWire_Projects_Settings::get_narrative_exclusions() );
 	}
 
-	private static function term_usage( $taxonomy ) {
+	private static function term_usage( $taxonomy, array $excluded_names = array() ) {
 		$terms = get_terms( array(
 			'taxonomy'   => $taxonomy,
 			'hide_empty' => false,
@@ -270,6 +270,10 @@ class AlphaWire_Projects_Directory_REST {
 
 		$results = array();
 		foreach ( $terms as $term ) {
+			if ( $excluded_names && in_array( strtolower( $term->name ), $excluded_names, true ) ) {
+				continue;
+			}
+
 			$count_query = new WP_Query( array(
 				'post_type'      => AlphaWire_Projects_Post_Type::POST_TYPE,
 				'post_status'    => 'publish',

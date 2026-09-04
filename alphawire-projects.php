@@ -2,9 +2,18 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.6.0
+ * Version: 0.6.1
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.6.1 — "Trending Narratives" now matches the build plan's decision log:
+ * `topic` also holds entity-style terms (Tether, Circle, Ripple,
+ * Polymarket, Kalshi…) that were flagged as "not narratives, needs
+ * filtering" but the first cut of the Directory never actually filtered
+ * them. Projects → Settings → Directory — Narratives now has an editable
+ * exclusion list (seeded with those five) so an entity term can never show
+ * up as a Trending Narrative, no matter how many Projects get tagged with
+ * it. Top Categories is untouched — pillar has no such entity-term problem.
  *
  * v0.6.0 — Self-updates from GitHub. Projects → Settings gets two new
  * fields (GitHub repo, branch to track). Once set, WordPress checks the
@@ -83,7 +92,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.6.0' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.6.1' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

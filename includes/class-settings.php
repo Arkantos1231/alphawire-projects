@@ -18,6 +18,9 @@ class AlphaWire_Projects_Settings {
 	const OPTION_GITHUB_BRANCH = 'alphawire_projects_github_branch';
 	const DEFAULT_GITHUB_BRANCH = 'main';
 
+	const OPTION_NARRATIVE_EXCLUSIONS   = 'alphawire_projects_narrative_exclusions';
+	const DEFAULT_NARRATIVE_EXCLUSIONS  = "Tether\nCircle\nRipple\nPolymarket\nKalshi";
+
 	public static function hooks() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
@@ -124,6 +127,33 @@ class AlphaWire_Projects_Settings {
 			'alphawire-projects-settings',
 			'alphawire_projects_updates_section'
 		);
+
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_NARRATIVE_EXCLUSIONS,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => self::DEFAULT_NARRATIVE_EXCLUSIONS,
+			)
+		);
+
+		add_settings_section(
+			'alphawire_projects_narratives_section',
+			'Directory — Narratives',
+			function () {
+				echo '<p>' . esc_html__( 'The topic taxonomy also holds entity-style terms (Tether, Circle…) that aren\'t narratives — per the build plan, they never belong in "Trending Narratives" on the Directory, even if a Project happens to get tagged with one.', 'alphawire-projects' ) . '</p>';
+			},
+			'alphawire-projects-settings'
+		);
+
+		add_settings_field(
+			self::OPTION_NARRATIVE_EXCLUSIONS,
+			'Exclude from Narratives',
+			array( __CLASS__, 'render_narrative_exclusions_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_narratives_section'
+		);
 	}
 
 	/**
@@ -212,6 +242,22 @@ class AlphaWire_Projects_Settings {
 		<?php
 	}
 
+	public static function render_narrative_exclusions_field() {
+		$value = get_option( self::OPTION_NARRATIVE_EXCLUSIONS, self::DEFAULT_NARRATIVE_EXCLUSIONS );
+		?>
+		<textarea
+			name="<?php echo esc_attr( self::OPTION_NARRATIVE_EXCLUSIONS ); ?>"
+			rows="4"
+			class="large-text code"
+		><?php echo esc_textarea( $value ); ?></textarea>
+		<p class="description">
+			Term names from the <code>topic</code> taxonomy, one per line (commas also work) — matched
+			case-insensitively by exact name. These never show up in "Trending Narratives" on the
+			Directory, no matter how many Projects get tagged with them.
+		</p>
+		<?php
+	}
+
 	public static function render_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -247,5 +293,25 @@ class AlphaWire_Projects_Settings {
 	public static function get_github_branch() {
 		$branch = trim( (string) get_option( self::OPTION_GITHUB_BRANCH, self::DEFAULT_GITHUB_BRANCH ) );
 		return $branch ? $branch : self::DEFAULT_GITHUB_BRANCH;
+	}
+
+	/**
+	 * @return string[] Lower-cased term names to exclude from "Trending
+	 *                   Narratives" — entity-style `topic` terms (Tether,
+	 *                   Circle…) that were never meant to count as a
+	 *                   narrative, per the build plan's decision log.
+	 */
+	public static function get_narrative_exclusions() {
+		$raw   = get_option( self::OPTION_NARRATIVE_EXCLUSIONS, self::DEFAULT_NARRATIVE_EXCLUSIONS );
+		$parts = preg_split( '/[,\r\n]+/', (string) $raw );
+
+		$out = array();
+		foreach ( $parts as $part ) {
+			$part = strtolower( trim( $part ) );
+			if ( '' !== $part ) {
+				$out[] = $part;
+			}
+		}
+		return $out;
 	}
 }
