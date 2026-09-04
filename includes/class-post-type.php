@@ -9,7 +9,7 @@ class AlphaWire_Projects_Post_Type {
 
 	// Bump this whenever register_top_priority_rewrites() changes shape —
 	// it drives the one-time self-healing flush in maybe_flush_rewrite_rules().
-	const REWRITE_VERSION = 5;
+	const REWRITE_VERSION = 6;
 
 	public static function register() {
 		register_post_type(
@@ -110,13 +110,51 @@ class AlphaWire_Projects_Post_Type {
 	 * activation (or a manual visit to Settings → Permalinks) — so a change
 	 * to the rules above would otherwise stay broken on every site that's
 	 * already active until someone remembers to deactivate/reactivate.
-	 * Comparing a stored version number makes this self-heal on the very
-	 * next request after an update instead.
+	 * Comparing a stored version number is meant to self-heal on the very
+	 * next request after an update instead — but that guard trusts that a
+	 * past flush_rewrite_rules() call actually stuck, which turned out not
+	 * to always be true (see v0.7.2). It's now backed up by actually
+	 * checking the live rewrite_rules option content on every request.
 	 */
 	public static function maybe_flush_rewrite_rules() {
-		if ( (string) get_option( 'alphawire_projects_rewrite_version' ) !== (string) self::REWRITE_VERSION ) {
+		$stored_version   = (string) get_option( 'alphawire_projects_rewrite_version' );
+		$version_mismatch = $stored_version !== (string) self::REWRITE_VERSION;
+
+		// The version guard above only proves we *asked* WordPress to
+		// flush once — not that what it persisted still contains our
+		// rules. Those drifted apart on the live site: rewrite_rules came
+		// back stale (most likely a write that never stuck) while the
+		// version option already said "done", so /projects/ and
+		// /projects/{slug} silently lost to the site's News-page rule
+		// again with no version bump to trigger a retry. A manual
+		// Settings -> Permalinks save fixed it instantly — the very same
+		// flush_rewrite_rules() call made here — so the guard was the
+		// bug, not the mechanism. Checking the *actual* option content
+		// closes that gap: any future drift self-heals on the next
+		// request instead of waiting on a version bump that's already
+		// spent.
+		$current_rules = get_option( 'rewrite_rules' );
+		$rules_missing  = ! is_array( $current_rules ) || ! self::top_rules_are_present( $current_rules );
+
+		if ( $version_mismatch || $rules_missing ) {
 			flush_rewrite_rules();
 			update_option( 'alphawire_projects_rewrite_version', self::REWRITE_VERSION, false );
 		}
+	}
+
+	/**
+	 * True only if every one of our top_rules() patterns is present as a
+	 * key in the live rewrite_rules option — i.e. WordPress actually
+	 * persisted them, not just that we once asked it to.
+	 *
+	 * @param array $current_rules The live `rewrite_rules` option value.
+	 */
+	private static function top_rules_are_present( array $current_rules ) {
+		foreach ( array_keys( self::top_rules() ) as $pattern ) {
+			if ( ! array_key_exists( $pattern, $current_rules ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

@@ -2,9 +2,21 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.1
+ * Version: 0.7.2
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.2 — Fixes /projects/ and /projects/{slug} losing to the site's
+ * News-page rule again, despite the v0.3.x priority fix still being intact
+ * and unchanged. Root cause: the self-healing flush only ever compared a
+ * stored version number against REWRITE_VERSION — proof we once *asked*
+ * WordPress to flush, not that the flushed rules actually stuck. On the
+ * live site they drifted apart (rewrite_rules came back stale while the
+ * version option already said "done"), so no future update could ever
+ * trigger a retry; only a manual Settings → Permalinks save forced a real
+ * flush and fixed it. maybe_flush_rewrite_rules() now also checks the live
+ * rewrite_rules option for our own rule keys on every request and re-flushes
+ * if they're missing, so this can't go silently stale again.
  *
  * v0.7.1 — Fixes overflow on the Directory grid card introduced in
  * v0.7.0: the save star (absolutely positioned) overlapped the price/
@@ -115,7 +127,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.1' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.2' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
