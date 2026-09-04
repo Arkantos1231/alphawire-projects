@@ -802,18 +802,32 @@
 	cursor: pointer;
 }
 
+/*
+ * Matches the Lovable reference: no divider rule between rows (spacing
+ * alone separates them), and Recently Launched/Updated show each
+ * Project's own logo/initial next to its name — Top Categories/Trending
+ * Narratives stay text-only since those rows are taxonomy terms, not
+ * Projects, so there's no icon to show.
+ */
 .aw-list-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
-	padding: 6px 2px;
+	padding: 9px 2px;
 	font-size: 13px;
-	border-bottom: 1px solid var(--aw-border);
 }
 
-.aw-list-row:last-child {
-	border-bottom: none;
+.aw-list-row-identity {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.aw-list-row-identity .aw-logo {
+	flex-shrink: 0;
+	font-size: 11px;
 }
 
 .aw-pagination {

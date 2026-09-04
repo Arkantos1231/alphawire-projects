@@ -238,7 +238,10 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 					</div>
 					<?php foreach ( AlphaWire_Projects_Directory_REST::recently_launched( null ) as $card ) : ?>
 						<a class="aw-list-row" href="<?php echo esc_url( get_permalink( $card['id'] ) ); ?>">
-							<span><?php echo esc_html( $card['name'] ); ?> <span class="aw-muted"><?php echo esc_html( $card['ticker'] ); ?></span></span>
+							<span class="aw-list-row-identity">
+								<?php aw_projects_logo( $card, 28 ); ?>
+								<span><?php echo esc_html( $card['name'] ); ?> <span class="aw-muted"><?php echo esc_html( $card['ticker'] ); ?></span></span>
+							</span>
 						</a>
 					<?php endforeach; ?>
 				</div>
@@ -250,7 +253,10 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 					</div>
 					<?php foreach ( AlphaWire_Projects_Directory_REST::recently_updated( null ) as $card ) : ?>
 						<a class="aw-list-row" href="<?php echo esc_url( get_permalink( $card['id'] ) ); ?>">
-							<span><?php echo esc_html( $card['name'] ); ?> <span class="aw-muted"><?php echo esc_html( $card['ticker'] ); ?></span></span>
+							<span class="aw-list-row-identity">
+								<?php aw_projects_logo( $card, 28 ); ?>
+								<span><?php echo esc_html( $card['name'] ); ?> <span class="aw-muted"><?php echo esc_html( $card['ticker'] ); ?></span></span>
+							</span>
 						</a>
 					<?php endforeach; ?>
 				</div>

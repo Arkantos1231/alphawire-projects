@@ -2,9 +2,19 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.6
+ * Version: 0.7.7
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.7 — Matched the Lovable reference for the Top Categories/Trending
+ * Narratives/Recently Launched/Recently Updated panels: dropped the
+ * divider line between rows (spacing alone separates them now), and
+ * Recently Launched/Updated rows show each Project's own logo (or ticker-
+ * initial placeholder) next to its name, the same way the Directory grid
+ * and Trending strip already do. Top Categories/Trending Narratives stay
+ * text-only — those rows are taxonomy terms, not Projects, so there's no
+ * icon to show. See .aw-list-row / .aw-list-row-identity in projects.css
+ * and templates/archive-project.php.
  *
  * v0.7.6 — v0.7.5 didn't finish the job: the star still showed a pink
  * 1px border and a 52x42px box (instead of a plain 18px icon) after that
@@ -177,7 +187,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.6' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.7' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
