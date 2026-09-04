@@ -13,7 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AlphaWire_Projects_Content_Relationships {
 
 	const CONTENT_TYPES = array( 'news', 'podcast', 'post' );
-	const META_KEY       = 'related_project';
+	const META_KEY               = 'related_project';
+	const PROJECT_NEWS_META_KEY  = 'related_news';
+	const PROJECT_PODCASTS_META_KEY = 'related_podcasts';
 
 	public static function register_fields() {
 		if ( ! function_exists( 'acf_add_local_field_group' ) ) {
@@ -83,22 +85,68 @@ class AlphaWire_Projects_Content_Relationships {
 
 		$query = new WP_Query( $args );
 		$items = array();
+		$seen  = array();
 
 		foreach ( $query->posts as $post ) {
-			$items[] = array(
-				'id'      => $post->ID,
-				'type'    => self::content_type_label( $post ),
-				'title'   => get_the_title( $post ),
-				'excerpt' => get_the_excerpt( $post ),
-				'image'   => get_the_post_thumbnail_url( $post, 'medium' ),
-				'date'    => get_the_date( 'c', $post ),
-				'url'     => get_permalink( $post ),
-			);
+			$items[]       = self::coverage_item( $post );
+			$seen[ $post->ID ] = true;
+		}
+
+		$selected_news     = self::get_project_content( self::PROJECT_NEWS_META_KEY, $project_id );
+		$selected_podcasts = self::get_project_content( self::PROJECT_PODCASTS_META_KEY, $project_id );
+
+		foreach ( array_merge( $selected_news, $selected_podcasts ) as $selected ) {
+			$post = is_object( $selected ) ? $selected : get_post( $selected );
+			if (
+				! $post ||
+				'publish' !== $post->post_status ||
+				! in_array( $post->post_type, array( 'news', 'podcast' ), true ) ||
+				isset( $seen[ $post->ID ] ) ||
+				! self::matches_bucket( $post, $bucket )
+			) {
+				continue;
+			}
+
+			$items[]       = self::coverage_item( $post );
+			$seen[ $post->ID ] = true;
 		}
 
 		wp_reset_postdata();
 
 		return $items;
+	}
+
+	private static function get_project_content( $meta_key, $project_id ) {
+		$value = function_exists( 'get_field' )
+			? get_field( $meta_key, $project_id )
+			: get_post_meta( $project_id, $meta_key, true );
+
+		return (array) $value;
+	}
+
+	private static function coverage_item( $post ) {
+		return array(
+			'id'      => $post->ID,
+			'type'    => self::content_type_label( $post ),
+			'title'   => get_the_title( $post ),
+			'excerpt' => get_the_excerpt( $post ),
+			'image'   => get_the_post_thumbnail_url( $post, 'medium' ),
+			'date'    => get_the_date( 'c', $post ),
+			'url'     => get_permalink( $post ),
+		);
+	}
+
+	private static function matches_bucket( $post, $bucket ) {
+		if ( null === $bucket ) {
+			return true;
+		}
+		if ( 'podcast' === $bucket ) {
+			return 'podcast' === $post->post_type;
+		}
+		if ( 'news' === $bucket ) {
+			return 'news' === $post->post_type;
+		}
+		return false;
 	}
 
 	private static function content_type_label( $post ) {

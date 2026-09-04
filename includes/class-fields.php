@@ -109,6 +109,24 @@ class AlphaWire_Projects_Fields {
 						'post_type' => array( AlphaWire_Projects_Post_Type::POST_TYPE ),
 						'filters'   => array( 'search' ),
 					),
+					array(
+						'key'          => 'field_aw_related_news',
+						'label'        => 'Related News',
+						'name'         => 'related_news',
+						'type'         => 'relationship',
+						'post_type'    => array( 'news' ),
+						'filters'       => array( 'search' ),
+						'instructions' => 'Select News posts to show in this Project\'s AlphaWire coverage.',
+					),
+					array(
+						'key'          => 'field_aw_related_podcasts',
+						'label'        => 'Related Podcasts',
+						'name'         => 'related_podcasts',
+						'type'         => 'relationship',
+						'post_type'    => array( 'podcast' ),
+						'filters'       => array( 'search' ),
+						'instructions' => 'Select Podcast posts to show in this Project\'s AlphaWire coverage.',
+					),
 				),
 				'location' => array(
 					array(
