@@ -139,8 +139,18 @@ while ( have_posts() ) :
 
 		</div>
 
-		<?php if ( ! empty( $project['timeline'] ) ) : ?>
-			<section class="aw-section aw-panel">
+		<nav class="aw-profile-tabs" role="tablist" aria-label="Project sections">
+			<button type="button" class="aw-profile-tab is-active" id="aw-tab-overview" role="tab" aria-selected="true" aria-controls="aw-panel-overview" data-aw-profile-tab="overview">Overview</button>
+			<button type="button" class="aw-profile-tab" id="aw-tab-timeline" role="tab" aria-selected="false" aria-controls="aw-panel-timeline" data-aw-profile-tab="timeline">Timeline</button>
+			<button type="button" class="aw-profile-tab" id="aw-tab-coverage" role="tab" aria-selected="false" aria-controls="aw-panel-coverage" data-aw-profile-tab="coverage">AlphaWire Coverage</button>
+			<button type="button" class="aw-profile-tab" id="aw-tab-research" role="tab" aria-selected="false" aria-controls="aw-panel-research" data-aw-profile-tab="research">Research</button>
+			<button type="button" class="aw-profile-tab" id="aw-tab-related" role="tab" aria-selected="false" aria-controls="aw-panel-related" data-aw-profile-tab="related">Related</button>
+		</nav>
+
+		<div class="aw-profile-tab-panels">
+			<div class="aw-profile-tab-panel is-active" id="aw-panel-overview" role="tabpanel" aria-labelledby="aw-tab-overview" data-aw-profile-panel="overview">
+				<?php if ( ! empty( $project['timeline'] ) ) : ?>
+					<section class="aw-section aw-panel">
 				<div class="aw-section-header">
 					<h2><?php echo esc_html( $project['name'] ); ?> Timeline</h2>
 					<p class="aw-hint">Editorially maintained project milestones.</p>
@@ -156,11 +166,11 @@ while ( have_posts() ) :
 						</li>
 					<?php endforeach; ?>
 				</ol>
-			</section>
-		<?php endif; ?>
+					</section>
+				<?php endif; ?>
 
-		<?php if ( $coverage_by_type ) : ?>
-			<section class="aw-section">
+				<?php if ( $coverage_by_type ) : ?>
+					<section class="aw-section">
 				<div class="aw-section-header">
 					<h2>Latest from AlphaWire</h2>
 					<p class="aw-hint">Coverage tagged to <?php echo esc_html( $project['name'] ); ?> appears here automatically.</p>
@@ -184,11 +194,17 @@ while ( have_posts() ) :
 						</div>
 					</div>
 				<?php endforeach; ?>
-			</section>
-		<?php endif; ?>
+					</section>
+				<?php endif; ?>
+			</div>
 
-		<?php if ( ! empty( $project['relatedProjects'] ) ) : ?>
-			<section class="aw-section">
+			<div class="aw-profile-tab-panel" id="aw-panel-timeline" role="tabpanel" aria-labelledby="aw-tab-timeline" data-aw-profile-panel="timeline" hidden></div>
+			<div class="aw-profile-tab-panel" id="aw-panel-coverage" role="tabpanel" aria-labelledby="aw-tab-coverage" data-aw-profile-panel="coverage" hidden></div>
+			<div class="aw-profile-tab-panel" id="aw-panel-research" role="tabpanel" aria-labelledby="aw-tab-research" data-aw-profile-panel="research" hidden></div>
+
+			<div class="aw-profile-tab-panel" id="aw-panel-related" role="tabpanel" aria-labelledby="aw-tab-related" data-aw-profile-panel="related" hidden>
+			<?php if ( ! empty( $project['relatedProjects'] ) ) : ?>
+				<section class="aw-section">
 				<div class="aw-section-header">
 					<h2>Related Projects</h2>
 				</div>
@@ -202,8 +218,10 @@ while ( have_posts() ) :
 						</a>
 					<?php endforeach; ?>
 				</div>
-			</section>
-		<?php endif; ?>
+				</section>
+			<?php endif; ?>
+			</div>
+		</div>
 
 	</div>
 

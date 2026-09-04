@@ -11,6 +11,49 @@
 ( function () {
 	'use strict';
 
+	function activateTab( tab ) {
+		var tabs = document.querySelectorAll( '[data-aw-profile-tab]' );
+		var panels = document.querySelectorAll( '[data-aw-profile-panel]' );
+		var target = tab.getAttribute( 'data-aw-profile-tab' );
+
+		tabs.forEach( function ( item ) {
+			var active = item === tab;
+			item.classList.toggle( 'is-active', active );
+			item.setAttribute( 'aria-selected', active ? 'true' : 'false' );
+			item.tabIndex = active ? 0 : -1;
+		} );
+
+		panels.forEach( function ( panel ) {
+			var active = panel.getAttribute( 'data-aw-profile-panel' ) === target;
+			panel.classList.toggle( 'is-active', active );
+			panel.hidden = ! active;
+		} );
+	}
+
+	document.addEventListener( 'click', function ( e ) {
+		var tab = e.target.closest( '[data-aw-profile-tab]' );
+		if ( tab ) {
+			activateTab( tab );
+		}
+	} );
+
+	document.addEventListener( 'keydown', function ( e ) {
+		var tab = e.target.closest( '[data-aw-profile-tab]' );
+		if ( ! tab || ( 'ArrowRight' !== e.key && 'ArrowLeft' !== e.key ) ) {
+			return;
+		}
+		e.preventDefault();
+		var tabs = Array.prototype.slice.call( document.querySelectorAll( '[data-aw-profile-tab]' ) );
+		var index = tabs.indexOf( tab );
+		var next = 'ArrowRight' === e.key ? ( index + 1 ) % tabs.length : ( index - 1 + tabs.length ) % tabs.length;
+		tabs[ next ].focus();
+		activateTab( tabs[ next ] );
+	} );
+} )();
+
+( function () {
+	'use strict';
+
 	if ( 'undefined' === typeof window.AlphaWireProjects ) {
 		return;
 	}

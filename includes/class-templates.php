@@ -87,20 +87,15 @@ class AlphaWire_Projects_Templates {
 			ALPHAWIRE_PROJECTS_VERSION
 		);
 
-		// The save-star + Collections modal is the plugin's first bit of
-		// front-end JS (everything else here is deliberately server-
-		// rendered) — it only does anything for a logged-in user, so it's
-		// enqueued everywhere on these pages but no-ops instantly for an
-		// anonymous visitor (their star is a plain login link, no JS
-		// needed at all — see aw_projects_save_button()).
+		wp_enqueue_script(
+			'alphawire-projects',
+			ALPHAWIRE_PROJECTS_URL . 'assets/js/projects.js',
+			array(),
+			ALPHAWIRE_PROJECTS_VERSION,
+			true
+		);
+
 		if ( is_user_logged_in() ) {
-			wp_enqueue_script(
-				'alphawire-projects',
-				ALPHAWIRE_PROJECTS_URL . 'assets/js/projects.js',
-				array(),
-				ALPHAWIRE_PROJECTS_VERSION,
-				true
-			);
 			wp_localize_script(
 				'alphawire-projects',
 				'AlphaWireProjects',
