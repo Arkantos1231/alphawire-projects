@@ -1112,7 +1112,19 @@
 }
 
 .aw-coverage-section .aw-grid {
-	grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+	grid-template-columns: repeat(3, minmax(300px, 1fr));
+}
+
+@media (max-width: 1000px) {
+	.aw-coverage-section .aw-grid {
+		grid-template-columns: repeat(2, minmax(300px, 1fr));
+	}
+}
+
+@media (max-width: 700px) {
+	.aw-coverage-section .aw-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 .aw-coverage-filters {
@@ -1141,8 +1153,8 @@
 	color: var(--aw-text);
 }
 
-.aw-coverage-group[hidden] {
-	display: none;
+.aw-coverage-item[hidden] {
+	display: none !important;
 }
 
 .aw-coverage-item {

@@ -67,9 +67,9 @@
 			item.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
 		} );
 
-		section.querySelectorAll( '[data-aw-coverage-group]' ).forEach( function ( group ) {
-			var visible = 'all' === selected || group.getAttribute( 'data-aw-coverage-group' ) === selected;
-			group.hidden = ! visible;
+		section.querySelectorAll( '[data-aw-coverage-type]' ).forEach( function ( card ) {
+			var visible = 'all' === selected || card.getAttribute( 'data-aw-coverage-type' ) === selected;
+			card.hidden = ! visible;
 		} );
 	}
 

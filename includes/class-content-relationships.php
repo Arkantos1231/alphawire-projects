@@ -125,6 +125,18 @@ class AlphaWire_Projects_Content_Relationships {
 	}
 
 	private static function coverage_item( $post ) {
+		$read_time = null;
+		if ( 'podcast' === $post->post_type ) {
+			$length = function_exists( 'get_field' ) ? get_field( 'length', $post->ID ) : get_post_meta( $post->ID, 'length', true );
+			if ( is_string( $length ) && preg_match( '/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $length, $parts ) ) {
+				$seconds   = ( (int) $parts[1] * 60 * ( isset( $parts[3] ) ? 60 : 1 ) ) + ( (int) $parts[2] * ( isset( $parts[3] ) ? 60 : 1 ) ) + ( isset( $parts[3] ) ? (int) $parts[3] : 0 );
+				$read_time = max( 1, (int) ceil( $seconds / 60 ) );
+			}
+		} else {
+			$word_count = str_word_count( wp_strip_all_tags( $post->post_content ) );
+			$read_time  = max( 1, (int) ceil( $word_count / 200 ) );
+		}
+
 		return array(
 			'id'      => $post->ID,
 			'type'    => self::content_type_label( $post ),
@@ -132,6 +144,7 @@ class AlphaWire_Projects_Content_Relationships {
 			'excerpt' => get_the_excerpt( $post ),
 			'image'   => get_the_post_thumbnail_url( $post, 'medium' ),
 			'date'    => get_the_date( 'c', $post ),
+			'readTime' => $read_time,
 			'url'     => get_permalink( $post ),
 		);
 	}

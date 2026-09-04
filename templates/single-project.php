@@ -23,6 +23,13 @@ while ( have_posts() ) :
 	foreach ( $project['coverage'] as $item ) {
 		$coverage_by_type[ $item['type'] ][] = $item;
 	}
+	$coverage_items = $project['coverage'];
+	usort(
+		$coverage_items,
+		function ( $a, $b ) {
+			return strcmp( $b['date'] ?? '', $a['date'] ?? '' );
+		}
+	);
 	?>
 
 	<div class="aw-projects">
@@ -180,29 +187,30 @@ while ( have_posts() ) :
 						<?php endforeach; ?>
 					</div>
 				</div>
-				<?php foreach ( $coverage_by_type as $type => $items ) : ?>
-						<div class="aw-coverage-group" data-aw-coverage-group="<?php echo esc_attr( sanitize_title( $type ) ); ?>">
-						<div class="aw-grid">
-							<?php foreach ( $items as $item ) : ?>
-								<a class="aw-panel-hover aw-coverage-item" href="<?php echo esc_url( $item['url'] ); ?>">
+				<div class="aw-grid">
+					<?php foreach ( $coverage_items as $item ) : ?>
+						<a class="aw-panel-hover aw-coverage-item" data-aw-coverage-type="<?php echo esc_attr( sanitize_title( $item['type'] ) ); ?>" href="<?php echo esc_url( $item['url'] ); ?>">
 									<?php if ( ! empty( $item['image'] ) ) : ?>
 										<img class="aw-cov-thumb" src="<?php echo esc_url( $item['image'] ); ?>" alt="" />
 									<?php else : ?>
 										<span class="aw-cov-thumb" aria-hidden="true"></span>
 									<?php endif; ?>
 									<span class="aw-cov-content">
-										<span class="aw-cov-type"><?php echo esc_html( $type ); ?></span>
+										<span class="aw-cov-type"><?php echo esc_html( $item['type'] ); ?></span>
 										<span class="aw-cov-title"><?php echo esc_html( $item['title'] ); ?></span>
 										<?php if ( ! empty( $item['excerpt'] ) ) : ?>
 											<span class="aw-cov-excerpt"><?php echo esc_html( wp_strip_all_tags( $item['excerpt'] ) ); ?></span>
 										<?php endif; ?>
-										<span class="aw-cov-date"><?php echo esc_html( $item['date'] ?? '' ); ?></span>
+										<span class="aw-cov-date">
+											<?php echo esc_html( $item['date'] ? wp_date( 'M j, Y', strtotime( $item['date'] ) ) : '' ); ?>
+											<?php if ( ! empty( $item['readTime'] ) ) : ?>
+												· <?php echo ( 'Podcast' === $item['type'] ) ? (int) $item['readTime'] . ' min listen' : (int) $item['readTime'] . ' min read'; ?>
+											<?php endif; ?>
+										</span>
 									</span>
 								</a>
-							<?php endforeach; ?>
-						</div>
-					</div>
-				<?php endforeach; ?>
+					<?php endforeach; ?>
+				</div>
 					</section>
 				<?php endif; ?>
 			</div>
@@ -220,29 +228,30 @@ while ( have_posts() ) :
 								<?php endforeach; ?>
 							</div>
 						</div>
-						<?php foreach ( $coverage_by_type as $type => $items ) : ?>
-							<div class="aw-coverage-group" data-aw-coverage-group="<?php echo esc_attr( sanitize_title( $type ) ); ?>">
-								<div class="aw-grid">
-									<?php foreach ( $items as $item ) : ?>
-										<a class="aw-panel-hover aw-coverage-item" href="<?php echo esc_url( $item['url'] ); ?>">
+						<div class="aw-grid">
+							<?php foreach ( $coverage_items as $item ) : ?>
+								<a class="aw-panel-hover aw-coverage-item" data-aw-coverage-type="<?php echo esc_attr( sanitize_title( $item['type'] ) ); ?>" href="<?php echo esc_url( $item['url'] ); ?>">
 											<?php if ( ! empty( $item['image'] ) ) : ?>
 												<img class="aw-cov-thumb" src="<?php echo esc_url( $item['image'] ); ?>" alt="" />
 											<?php else : ?>
 												<span class="aw-cov-thumb" aria-hidden="true"></span>
 											<?php endif; ?>
 											<span class="aw-cov-content">
-												<span class="aw-cov-type"><?php echo esc_html( $type ); ?></span>
+													<span class="aw-cov-type"><?php echo esc_html( $item['type'] ); ?></span>
 												<span class="aw-cov-title"><?php echo esc_html( $item['title'] ); ?></span>
 												<?php if ( ! empty( $item['excerpt'] ) ) : ?>
 													<span class="aw-cov-excerpt"><?php echo esc_html( wp_strip_all_tags( $item['excerpt'] ) ); ?></span>
 												<?php endif; ?>
-												<span class="aw-cov-date"><?php echo esc_html( $item['date'] ?? '' ); ?></span>
+												<span class="aw-cov-date">
+													<?php echo esc_html( $item['date'] ? wp_date( 'M j, Y', strtotime( $item['date'] ) ) : '' ); ?>
+													<?php if ( ! empty( $item['readTime'] ) ) : ?>
+														· <?php echo ( 'Podcast' === $item['type'] ) ? (int) $item['readTime'] . ' min listen' : (int) $item['readTime'] . ' min read'; ?>
+													<?php endif; ?>
+												</span>
 											</span>
 										</a>
-									<?php endforeach; ?>
-								</div>
-							</div>
-						<?php endforeach; ?>
+							<?php endforeach; ?>
+						</div>
 					</section>
 				<?php endif; ?>
 			</div>
