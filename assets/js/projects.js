@@ -151,11 +151,13 @@
 	}
 
 	function refreshStarButtons( projectId, isSaved ) {
+		// The star is a single inline SVG (see aw_projects_star_icon() in
+		// template-functions.php) whose fill is entirely CSS-driven off the
+		// is-saved class — nothing here needs to touch its markup.
 		var buttons = document.querySelectorAll( '[data-aw-save-project="' + projectId + '"]' );
 		buttons.forEach( function ( btn ) {
 			btn.classList.toggle( 'is-saved', isSaved );
 			btn.setAttribute( 'aria-pressed', isSaved ? 'true' : 'false' );
-			btn.textContent = isSaved ? '★' : '☆';
 		} );
 	}
 

@@ -2,9 +2,25 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.4
+ * Version: 0.7.5
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.5 — The save/favorite star looked wrong everywhere it appeared
+ * (Directory grid, Trending strip, Project profile): a bordered circle
+ * chip around a ★/☆ text glyph, boxy next to the rest of the UI. Swapped
+ * for a bare inline SVG outline star (Lucide's path, chosen for staying
+ * legible as a hollow outline at small sizes), no background or border,
+ * matching how the Lovable reference draws this icon everywhere. Also
+ * found and fixed the reason it briefly still rendered as a solid white
+ * blob regardless of saved state while building this: the theme carries a
+ * site-wide dark-mode rule forcing every SVG's fill AND stroke to white
+ * (`body.dark-mode svg:not(.alphaclub-signal *) path {
+ * fill/stroke:#fff!important }`), specific enough to beat a naive
+ * `!important` override — fixed by out-specifying it with the plugin's own
+ * .aw-projects wrapper rather than fighting importance alone. See the
+ * "Save button" section of projects.css and aw_projects_star_icon() in
+ * template-functions.php for the full story.
  *
  * v0.7.4 — Restyled the Trending Projects strip to match the Lovable
  * prototype exactly: a centered column (icon, name, ticker, description)
@@ -148,7 +164,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.4' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.5' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

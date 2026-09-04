@@ -171,16 +171,36 @@ function aw_projects_current_user_saved_ids() {
  * clicking it never silently fails, it explains what to do. Logged in,
  * it's a real toggle button that assets/js/projects.js wires up against
  * the Collections REST endpoints.
+ *
+ * The icon is an inline SVG outline star (Lucide's "star" path — chosen
+ * over a hand-drawn one because its rounder inner vertices stay legible as
+ * a hollow outline at ~18px; a tighter star shape reads as solid at that
+ * size even with fill:none) rather than the ★/☆ text characters the first
+ * cut used — those render inconsistently across platforms (weight, size,
+ * some render as a colour emoji) and, boxed in the small bordered circle
+ * button v0.7.x had around them, looked heavy next to the rest of the UI.
+ * One path serves both states: unsaved is `fill:none` (outline only, via
+ * CSS), and `.is-saved` switches it to `fill:currentColor` — see the
+ * "Save button" section of projects.css, including why that CSS has to
+ * fight the theme's own `svg path { fill/stroke: #fff !important }`
+ * dark-mode rule with higher specificity rather than just `!important`.
  */
+function aw_projects_star_icon() {
+	return '<svg class="aw-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+		. '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />'
+		. '</svg>';
+}
+
 function aw_projects_save_button( $project_id ) {
 	if ( ! is_user_logged_in() ) {
 		if ( function_exists( 'wp_login_url' ) ) {
 			$current = ( isset( $_SERVER['REQUEST_URI'] ) ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
 			printf(
-				'<a class="aw-save-btn" href="%s" title="%s" aria-label="%s">☆</a>',
+				'<a class="aw-save-btn" href="%s" title="%s" aria-label="%s">%s</a>',
 				esc_url( wp_login_url( home_url( $current ) ) ),
 				esc_attr__( 'Log in to save this Project', 'alphawire-projects' ),
-				esc_attr__( 'Log in to save this Project', 'alphawire-projects' )
+				esc_attr__( 'Log in to save this Project', 'alphawire-projects' ),
+				aw_projects_star_icon()
 			);
 		}
 		return;
@@ -193,7 +213,7 @@ function aw_projects_save_button( $project_id ) {
 		(int) $project_id,
 		$saved ? 'true' : 'false',
 		$saved ? esc_attr__( 'Manage collections for this Project', 'alphawire-projects' ) : esc_attr__( 'Save to a collection', 'alphawire-projects' ),
-		$saved ? '★' : '☆'
+		aw_projects_star_icon()
 	);
 }
 

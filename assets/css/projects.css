@@ -589,24 +589,56 @@
 
 /* ---------------- Save button + Collections modal ---------------- */
 
+/*
+ * v0.7.x drew this as a bordered circle chip with a ★/☆ text glyph inside —
+ * boxy next to the rest of the UI, and the text glyph renders inconsistently
+ * across platforms/fonts. Now a bare inline SVG outline star (see
+ * aw_projects_star_icon() in template-functions.php), no background or
+ * border at all — matches the Lovable reference, which never puts a box
+ * around this icon anywhere it appears. One SVG path serves both states:
+ * unsaved is stroke-only, .is-saved switches it to a solid fill.
+ *
+ * The theme itself carries a site-wide dark-mode rule that forces every
+ * SVG's fill AND stroke to white — `body.dark-mode svg:not(.alphaclub-
+ * signal *) path { fill:#fff!important; stroke:#fff!important; }` — which
+ * is exactly specific enough (2 classes + 3 type selectors) to beat a
+ * naive `.aw-save-btn .aw-star-icon path { ... !important }` override (2
+ * classes + 1 type: loses the specificity tie-break). Confirmed live —
+ * even an inline `style="fill:none"` on the path lost to it. The fix is
+ * simply out-specifying it (3 classes beats their 2, full stop, no need to
+ * match their type-selector count) by qualifying every rule below with the
+ * plugin's own .aw-projects wrapper, which every one of these pages has.
+ */
 .aw-save-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 26px;
-	height: 26px;
-	border-radius: 50%;
-	background: rgba(20, 22, 26, 0.55);
-	border: 1px solid var(--aw-border);
+	gap: 6px;
+	padding: 5px;
+	border: none;
+	background: none;
 	color: var(--aw-muted);
-	font-size: 13px;
-	line-height: 1;
 	cursor: pointer;
+}
+
+.aw-save-btn .aw-star-icon {
+	width: 18px;
+	height: 18px;
+}
+
+.aw-projects .aw-save-btn .aw-star-icon path {
+	stroke: currentColor !important;
+	stroke-width: 2 !important;
+	fill: none !important;
+	transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
 .aw-save-btn.is-saved {
 	color: var(--aw-accent);
-	border-color: rgba(200, 243, 35, 0.4);
+}
+
+.aw-projects .aw-save-btn.is-saved .aw-star-icon path {
+	fill: currentColor !important;
 }
 
 .aw-save-btn:hover {
@@ -619,12 +651,17 @@
 
 .aw-profile-save .aw-save-btn {
 	position: static;
-	width: auto;
-	height: auto;
+	border: 1px solid var(--aw-border);
+	background: var(--aw-surface-2);
 	border-radius: var(--aw-radius);
 	padding: 6px 12px;
-	gap: 6px;
 	font-size: 12px;
+	color: var(--aw-text);
+}
+
+.aw-profile-save .aw-save-btn.is-saved {
+	border-color: rgba(200, 243, 35, 0.4);
+	color: var(--aw-accent);
 }
 
 .aw-profile-save .aw-save-btn::after {
