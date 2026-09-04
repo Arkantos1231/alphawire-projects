@@ -202,6 +202,45 @@ datos reales, no en el diseño estático:
   Recently Launched/Updated muestran el logo o inicial de cada Project al
   lado del nombre, igual que el grid y el Trending strip.
 
+## Arquitectura: endpoints propios y datos de mercado
+
+El plugin expone sus propios endpoints REST bajo el namespace
+`alphawire-projects/v1` — el front end nunca pega directo a CoinGecko, solo
+consume estos:
+
+- `GET /projects/{slug}` — payload completo de un Project (`class-rest-api.php`),
+  para la Project Profile page.
+- `GET /projects`, `/projects/trending`, `/projects/recently-launched`,
+  `/projects/recently-updated`, `/projects/editors-picks`, `/categories`,
+  `/narratives` — endpoints de Directory (`class-directory-rest-api.php`).
+- `GET/POST/DELETE /collections...` — Collections del usuario logueado
+  (`class-collections.php`).
+
+Cuando alguno de estos endpoints tiene que devolver precio/market cap/etc.,
+arma esa parte del JSON llamando internamente a
+`AlphaWire_Projects_Market_Data_Service` (`class-market-data-service.php`) —
+es la única clase del plugin que habla con CoinGecko, y ningún otro código
+toca la API cruda:
+
+- `get_market_data()` — para el endpoint de un solo Project. Si el caché de
+  15 min expiró, puede hacer un fetch en vivo (timeout corto) antes de
+  responder.
+- `get_cached_market_data()` — para los endpoints de Directory/listados.
+  Nunca fetchea; solo lee caché, para no disparar N llamadas bloqueantes a
+  CoinGecko al renderizar una grilla con varios Projects.
+- Fallback en cascada: caché de 15 min → fetch en vivo → último valor bueno
+  guardado sin expiración (marcado `stale: true`) → payload vacío si nunca
+  hubo un fetch exitoso. Ningún caller recibe `null` ni tiene que manejar
+  "esto falló" como caso especial.
+- Refresh real solo en background: un job cada 15 min (Action Scheduler si
+  está disponible, si no WP-Cron) recorre todos los Projects publicados con
+  `coingecko_id` y repuebla el caché, con una pausa de 300ms entre
+  proyectos para no pisar el rate limit del tier gratis de CoinGecko (5-15
+  req/min). Nunca se llama a CoinGecko durante el render de una página.
+- Ya tiene un filtro (`alphawire_projects_coingecko_request_args`) listo
+  para agregar una API key de CoinGecko Demo/paga el día que exista, sin
+  tocar nada más del plugin.
+
 ## Todavía no está en esta versión
 
 SEO (metadatos específicos de Project vía Rank Math) y analítica. Ver Fase
