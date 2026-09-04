@@ -2,9 +2,20 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.3
+ * Version: 0.7.4
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.4 — Restyled the Trending Projects strip to match the Lovable
+ * prototype exactly: a centered column (icon, name, ticker, description)
+ * instead of the old left-aligned rank+logo row, a divider line above the
+ * footer, an up/down triangle next to the 24h change, and the save star
+ * moved from the top-right corner to sit beside the volume figure at the
+ * bottom. Footers now sit flush with the bottom of every card in a row
+ * (flex `margin-top: auto`) regardless of how long each description is, so
+ * a row of cards lines up evenly the way the mock's does. Verified against
+ * the live site by restructuring one card's DOM and injecting the new CSS
+ * before touching any file.
  *
  * v0.7.3 — The v0.7.1 overflow fix wasn't complete: the Directory grid
  * card's tagline (`.aw-card-tagline`) is a bare <span>, which is
@@ -137,7 +148,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.3' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.4' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

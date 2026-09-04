@@ -99,10 +99,8 @@ function aw_projects_render_trending_card( $card, $rank ) {
 	?>
 	<div class="aw-trend-card aw-panel-hover">
 		<a class="aw-trend-link" href="<?php echo esc_url( get_permalink( $card['id'] ) ); ?>">
-			<div class="aw-trend-top">
-				<span class="aw-rank"><?php echo (int) $rank; ?></span>
-				<?php aw_projects_logo( $card, 44 ); ?>
-			</div>
+			<span class="aw-rank"><?php echo (int) $rank; ?></span>
+			<?php aw_projects_logo( $card, 48 ); ?>
 			<span class="aw-name"><?php echo esc_html( $card['name'] ); ?></span>
 			<span class="aw-ticker"><?php echo esc_html( $card['ticker'] ); ?></span>
 			<?php if ( ! empty( $card['tagline'] ) ) : ?>

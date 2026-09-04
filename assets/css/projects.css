@@ -450,6 +450,16 @@
 	white-space: nowrap;
 }
 
+/*
+ * Trending Projects strip — restyled to match the Lovable prototype: a
+ * centered column (icon, name, ticker, description) with a divider line
+ * above a footer row (change% with an up/down indicator on the left,
+ * volume + save star on the right), all cards in a row equal height with
+ * the footer pinned to the bottom regardless of how long the description
+ * is. Previously this was left-aligned with the rank badge and logo side
+ * by side and no footer divider — matches the plugin's own data, not the
+ * mock's, but the layout now mirrors the reference pixel-for-pixel.
+ */
 .aw-trend-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -464,42 +474,31 @@
 .aw-trend-link {
 	display: flex;
 	flex-direction: column;
-	padding: 14px;
-	/* Same reasoning as .aw-card-link — keeps the rank badge and content
-	   clear of the absolutely-positioned save star in the corner. */
-	padding-right: 36px;
+	align-items: center;
+	height: 100%;
+	padding: 18px 14px 14px;
 	gap: 2px;
 }
 
-.aw-trend-top {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 8px;
-}
-
 .aw-rank {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 18px;
-	height: 18px;
-	background: var(--aw-surface-2);
-	border-radius: 3px;
-	padding: 0 4px;
-	font-size: 10px;
+	position: absolute;
+	top: 10px;
+	left: 12px;
+	font-size: 11px;
 	color: var(--aw-muted);
 }
 
 .aw-trend-link .aw-logo {
-	width: 44px;
-	height: 44px;
-	font-size: 15px;
+	width: 48px;
+	height: 48px;
+	font-size: 16px;
+	margin-bottom: 10px;
 }
 
 .aw-trend-link .aw-name {
 	font-size: 14px;
 	font-weight: 600;
+	text-align: center;
 }
 
 .aw-trend-link .aw-ticker {
@@ -507,12 +506,15 @@
 	font-size: 10px;
 	color: var(--aw-muted);
 	text-transform: uppercase;
+	margin-bottom: 2px;
 }
 
 .aw-trend-tagline {
+	align-self: stretch;
 	font-size: 12px;
 	color: var(--aw-muted);
-	margin: 6px 0 0;
+	text-align: center;
+	margin: 4px 0 0;
 	overflow: hidden;
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
@@ -521,11 +523,44 @@
 }
 
 .aw-trend-foot {
+	align-self: stretch;
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 10px;
-	margin-top: 10px;
-	flex-wrap: wrap;
+	margin-top: 12px;
+	/* Sits at the very bottom of the card even when a shorter description
+	   leaves extra room above it, so every card's footer lines up. */
+	padding-top: 10px;
+	/* Clears the save star pinned to the card's bottom-right corner. */
+	padding-right: 26px;
+	border-top: 1px solid var(--aw-border);
+}
+
+.aw-trend-link .aw-trend-foot {
+	margin-top: auto;
+}
+
+.aw-trend-foot .aw-change.up::before,
+.aw-trend-foot .aw-change.down::before {
+	content: "";
+	display: inline-block;
+	width: 0;
+	height: 0;
+	margin-right: 4px;
+	vertical-align: middle;
+}
+
+.aw-trend-foot .aw-change.up::before {
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-bottom: 6px solid currentColor;
+}
+
+.aw-trend-foot .aw-change.down::before {
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-top: 6px solid currentColor;
 }
 
 .aw-trend-volume {
@@ -536,7 +571,7 @@
 
 .aw-trend-card .aw-save-btn {
 	position: absolute;
-	top: 10px;
+	bottom: 10px;
 	right: 10px;
 }
 
