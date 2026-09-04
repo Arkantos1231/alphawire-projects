@@ -2,9 +2,20 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.7
+ * Version: 0.7.8
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.8 — A one-click "Check for updates" link on this plugin's row on
+ * the Plugins page (next to Deactivate). Before this, picking up a fresh
+ * GitHub push before the updater's own 6-hour cache expired meant using
+ * WordPress's site-wide "Check again" on Dashboard -> Updates — it works
+ * (it re-runs every plugin's update check, ours included), but it's not
+ * where anyone thinks to look for "did my push show up yet". This link
+ * clears just this plugin's cached GitHub version plus WordPress's own
+ * update_plugins transient, forces a fresh check on the very next admin
+ * page load, and shows a plain-language notice with the result. See
+ * includes/class-updater.php.
  *
  * v0.7.7 — Matched the Lovable reference for the Top Categories/Trending
  * Narratives/Recently Launched/Recently Updated panels: dropped the
@@ -187,7 +198,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.7' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.8' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

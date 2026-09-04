@@ -26,6 +26,17 @@ class AlphaWire_Projects_Updater {
 		add_filter( 'pre_set_site_transient_update_plugins', array( __CLASS__, 'check_for_update' ) );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugin_info' ), 20, 3 );
 		add_filter( 'upgrader_source_selection', array( __CLASS__, 'fix_folder_name' ), 10, 4 );
+
+		// A one-click "Check for updates" — before this, the only way to
+		// pick up a fresh GitHub push before the 6-hour cache (see
+		// get_remote_version()) expired on its own was WordPress's
+		// site-wide "Check again" on Dashboard -> Updates, which most
+		// people don't know re-checks custom updaters too. This link does
+		// the same thing but scoped to just this plugin, from the Plugins
+		// list row where people actually look for it.
+		add_filter( 'plugin_action_links_' . self::plugin_file(), array( __CLASS__, 'action_links' ) );
+		add_action( 'admin_post_aw_projects_check_update', array( __CLASS__, 'handle_check_update' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_checked_notice' ) );
 	}
 
 	private static function plugin_file() {
@@ -146,13 +157,93 @@ class AlphaWire_Projects_Updater {
 		return 'https://github.com/' . $repo . '/archive/refs/heads/' . $branch . '.zip';
 	}
 
+	private static function transient_cache_key( $repo, $branch ) {
+		return self::CACHE_KEY . '_' . md5( $repo . '@' . $branch );
+	}
+
+	/**
+	 * Adds "Check for updates" to this plugin's row on the Plugins page,
+	 * right alongside "Deactivate" — first in the list, since it's the one
+	 * people reach for right after a push.
+	 */
+	public static function action_links( $links ) {
+		$url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=aw_projects_check_update' ),
+			'aw_projects_check_update'
+		);
+
+		array_unshift(
+			$links,
+			'<a href="' . esc_url( $url ) . '">' . esc_html__( 'Check for updates', 'alphawire-projects' ) . '</a>'
+		);
+
+		return $links;
+	}
+
+	/**
+	 * Clears both our own 6-hour GitHub-version cache and WordPress's own
+	 * update_plugins transient, then redirects back. Deleting
+	 * update_plugins (rather than just waiting for ?force-check=1 to be
+	 * present on the next page) is what makes WordPress itself re-run the
+	 * whole plugin/theme update check on the very next admin page load —
+	 * see _maybe_update_plugins() in WordPress core.
+	 */
+	public static function handle_check_update() {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			wp_die( esc_html__( 'You are not allowed to check for updates.', 'alphawire-projects' ) );
+		}
+		check_admin_referer( 'aw_projects_check_update' );
+
+		$repo = AlphaWire_Projects_Settings::get_github_repo();
+		if ( '' !== $repo ) {
+			delete_transient( self::transient_cache_key( $repo, AlphaWire_Projects_Settings::get_github_branch() ) );
+		}
+		delete_site_transient( 'update_plugins' );
+
+		$redirect = wp_get_referer() ? wp_get_referer() : admin_url( 'plugins.php' );
+		wp_safe_redirect( add_query_arg( 'aw-projects-checked', '1', $redirect ) );
+		exit;
+	}
+
+	/**
+	 * Reads the update_plugins transient that the redirect above just
+	 * forced WordPress to rebuild, and says in plain language whether that
+	 * found a new version — so clicking the link gives a real answer
+	 * instead of just silently landing back on the same page.
+	 */
+	public static function maybe_show_checked_notice() {
+		if ( empty( $_GET['aw-projects-checked'] ) || ! current_user_can( 'update_plugins' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+
+		$plugin_file = self::plugin_file();
+		$current     = get_site_transient( 'update_plugins' );
+
+		if ( isset( $current->response[ $plugin_file ] ) ) {
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				sprintf(
+					/* translators: %s: version number available on GitHub */
+					esc_html__( 'AlphaWire Projects: checked GitHub — version %s is available below.', 'alphawire-projects' ),
+					esc_html( $current->response[ $plugin_file ]->new_version )
+				)
+			);
+		} else {
+			printf(
+				'<div class="notice notice-info is-dismissible"><p>%s</p></div>',
+				esc_html__( 'AlphaWire Projects: checked GitHub — you already have the latest version installed.', 'alphawire-projects' )
+			);
+		}
+	}
+
 	/**
 	 * Cached for a few hours so a busy wp-admin doesn't hit GitHub on every
 	 * page load — but bypassed on WordPress's own "Check again" (which adds
-	 * ?force-check=1), so that button actually does something.
+	 * ?force-check=1) and on this plugin's own "Check for updates" link
+	 * (which deletes the transient outright, see handle_check_update()).
 	 */
 	private static function get_remote_version( $repo, $branch ) {
-		$cache_key    = self::CACHE_KEY . '_' . md5( $repo . '@' . $branch );
+		$cache_key    = self::transient_cache_key( $repo, $branch );
 		$force_check  = ! empty( $_GET['force-check'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( ! $force_check ) {
