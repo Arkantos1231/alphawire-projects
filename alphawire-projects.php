@@ -2,9 +2,18 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.0
+ * Version: 0.7.1
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.7.1 — Fixes overflow on the Directory grid card introduced in
+ * v0.7.0: the save star (absolutely positioned) overlapped the price/
+ * change text, and a long name/price could push past the card at the
+ * old 230px minimum width. Widened the grid's min column width, gave the
+ * price column a reserved min-width, and made flex items actually shrink
+ * for their ellipsis to apply (a flex item's default min-width:auto
+ * silently defeats text-overflow:ellipsis — this is what was letting
+ * "Chainlink"'s and "Ethereum"'s taglines run under their price).
  *
  * v0.7.0 — Directory restyled to match the Lovable prototype's layout
  * (left sidebar: Explore nav + Categories + a Collections CTA; search
@@ -106,7 +115,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.0' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.1' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

@@ -356,7 +356,7 @@
 .aw-grid {
 	display: grid;
 	gap: 10px;
-	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
 }
 
 .aw-card {
@@ -366,8 +366,12 @@
 
 .aw-card-link {
 	padding: 14px;
+	/* Extra right padding so the price/change column can never render
+	   under the absolutely-positioned save star in the corner — without
+	   this the two were visually overlapping on narrower cards. */
+	padding-right: 40px;
 	display: flex;
-	gap: 12px;
+	gap: 10px;
 	align-items: center;
 }
 
@@ -392,6 +396,7 @@
 	display: flex;
 	align-items: baseline;
 	gap: 6px;
+	min-width: 0;
 }
 
 .aw-card-title-row .aw-name {
@@ -400,12 +405,18 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	/* Flex items don't shrink below their content size by default, which
+	   silently defeats the ellipsis above and was letting long names push
+	   the whole card wider than its column — this is what actually makes
+	   the truncation apply. */
+	min-width: 0;
 }
 
 .aw-card-title-row .aw-ticker {
 	font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
 	font-size: 11px;
 	color: var(--aw-muted);
+	flex-shrink: 0;
 }
 
 .aw-card-tagline {
@@ -420,6 +431,10 @@
 .aw-card-price {
 	text-align: right;
 	flex-shrink: 0;
+	/* Reserves enough room for a price like "$81,151.00" plus its change
+	   badge on the line below, so this column never gets squeezed down to
+	   the point where the two start overlapping the tagline next to it. */
+	min-width: 78px;
 }
 
 .aw-card-price .aw-price {
@@ -427,6 +442,7 @@
 	font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
 	font-size: 13px;
 	margin-bottom: 2px;
+	white-space: nowrap;
 }
 
 .aw-trend-grid {
@@ -444,6 +460,9 @@
 	display: flex;
 	flex-direction: column;
 	padding: 14px;
+	/* Same reasoning as .aw-card-link — keeps the rank badge and content
+	   clear of the absolutely-positioned save star in the corner. */
+	padding-right: 36px;
 	gap: 2px;
 }
 
@@ -501,6 +520,7 @@
 	align-items: center;
 	gap: 10px;
 	margin-top: 10px;
+	flex-wrap: wrap;
 }
 
 .aw-trend-volume {
