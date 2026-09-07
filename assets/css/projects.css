@@ -1115,6 +1115,46 @@
 	grid-template-columns: repeat(3, minmax(300px, 1fr));
 }
 
+.aw-coverage-section {
+	position: relative;
+}
+
+.aw-coverage-section.is-filter-loading::before {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	padding-top: 68px;
+	background: color-mix(in srgb, var(--aw-surface) 78%, transparent);
+	color: var(--aw-muted);
+	font-size: 12px;
+	content: "Loading...";
+}
+
+.aw-coverage-section.is-filter-loading::after {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 6;
+	width: 24px;
+	height: 24px;
+	margin: -12px 0 0 -12px;
+	border: 3px solid var(--aw-border-strong);
+	border-top-color: var(--aw-accent);
+	border-radius: 50%;
+	content: "";
+	animation: aw-coverage-filter-spin 0.7s linear infinite;
+}
+
+@keyframes aw-coverage-filter-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 @media (max-width: 1000px) {
 	.aw-coverage-section .aw-grid {
 		grid-template-columns: repeat(2, minmax(300px, 1fr));
@@ -1154,6 +1194,68 @@
 }
 
 .aw-coverage-item[hidden] {
+	display: none !important;
+}
+
+.aw-projects .aw-coverage-section button.aw-coverage-load-more {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	box-sizing: border-box !important;
+	min-width: 132px !important;
+	height: auto !important;
+	margin: 18px auto 0 !important;
+	padding: 9px 16px !important;
+	border: 1px solid var(--aw-border-strong) !important;
+	border-radius: var(--aw-radius) !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: var(--aw-text) !important;
+	font: inherit !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	line-height: 1.2 !important;
+	text-transform: none !important;
+	letter-spacing: 0 !important;
+	cursor: pointer !important;
+	transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.aw-projects .aw-coverage-load-more:hover:not(:disabled) {
+	border-color: var(--aw-accent) !important;
+	background: transparent !important;
+	color: var(--aw-accent) !important;
+	transform: translateY(-1px);
+}
+
+.aw-projects .aw-coverage-load-more:focus-visible {
+	outline: 2px solid var(--aw-accent);
+	outline-offset: 3px;
+}
+
+.aw-projects .aw-coverage-load-more:disabled {
+	cursor: wait;
+	opacity: 0.7;
+}
+
+.aw-projects .aw-coverage-load-more.is-loading::before {
+	width: 12px;
+	height: 12px;
+	margin-right: 8px;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	content: "";
+	animation: aw-coverage-spin 0.7s linear infinite;
+}
+
+@keyframes aw-coverage-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.aw-projects .aw-coverage-section button.aw-coverage-load-more[hidden] {
 	display: none !important;
 }
 

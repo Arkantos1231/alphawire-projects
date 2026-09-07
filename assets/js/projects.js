@@ -54,6 +54,86 @@
 ( function () {
 	'use strict';
 
+	var cfg = window.AlphaWireProjects || {};
+	var pageSize = 6;
+
+	function escapeHtml( value ) {
+		var div = document.createElement( 'div' );
+		div.textContent = value || '';
+		return div.innerHTML;
+	}
+
+	function renderCoverageCard( item ) {
+		var image = item.image
+			? '<img class="aw-cov-thumb" src="' + escapeHtml( item.image ) + '" alt="" />'
+			: '<span class="aw-cov-thumb" aria-hidden="true"></span>';
+		var duration = item.readTime
+			? ' · ' + item.readTime + ( 'Podcast' === item.type ? ' min listen' : ' min read' )
+			: '';
+		var date = item.date ? new Date( item.date ).toLocaleDateString( 'en-US', { month: 'short', day: 'numeric', year: 'numeric' } ) : '';
+
+		return '<a class="aw-panel-hover aw-coverage-item" data-aw-coverage-type="' + escapeHtml( item.type.toLowerCase().replace( /[^a-z0-9]+/g, '-' ) ) + '" href="' + escapeHtml( item.url ) + '">' +
+			image +
+			'<span class="aw-cov-content">' +
+			'<span class="aw-cov-type">' + escapeHtml( item.type ) + '</span>' +
+			'<span class="aw-cov-title">' + escapeHtml( item.title ) + '</span>' +
+			( item.excerpt ? '<span class="aw-cov-excerpt">' + escapeHtml( item.excerpt.replace( /<[^>]*>/g, '' ) ) + '</span>' : '' ) +
+			'<span class="aw-cov-date">' + date + duration + '</span>' +
+			'</span></a>';
+	}
+
+	function loadCoverage( section, type, page, append ) {
+		var slug = section.getAttribute( 'data-aw-coverage-slug' );
+		var scope = section.getAttribute( 'data-aw-coverage-scope' ) || 'coverage';
+		var grid = section.querySelector( '.aw-grid' );
+		var button = section.querySelector( '[data-aw-coverage-load-more]' );
+		if ( ! slug || ! grid || ! cfg.restUrl ) {
+			return;
+		}
+
+		if ( button ) {
+			button.disabled = true;
+			button.classList.add( 'is-loading' );
+			button.textContent = 'Loading...';
+		}
+
+		var url = cfg.restUrl + '/projects/' + encodeURIComponent( slug ) + '/coverage?scope=' + encodeURIComponent( scope ) + '&type=' + encodeURIComponent( type ) + '&page=' + page + '&per_page=' + pageSize;
+		fetch( url, { headers: cfg.nonce ? { 'X-WP-Nonce': cfg.nonce } : {} } )
+			.then( function ( response ) {
+				if ( ! response.ok ) {
+					throw new Error( 'Could not load coverage.' );
+				}
+				return response.json();
+			} )
+			.then( function ( data ) {
+				var html = ( data.items || [] ).map( renderCoverageCard ).join( '' );
+				if ( append ) {
+					grid.insertAdjacentHTML( 'beforeend', html );
+				} else {
+					grid.innerHTML = html;
+				}
+				section.dataset.awCoveragePage = String( data.page );
+				section.dataset.awCoverageType = type;
+				if ( button ) {
+					button.hidden = ! data.hasMore;
+				}
+			} )
+			.catch( function () {
+				if ( button ) {
+					button.hidden = false;
+				}
+			} )
+			.finally( function () {
+				section.classList.remove( 'is-filter-loading' );
+				section.setAttribute( 'aria-busy', 'false' );
+				if ( button ) {
+					button.disabled = false;
+					button.classList.remove( 'is-loading' );
+					button.textContent = 'Load more';
+				}
+			} );
+	}
+
 	function filterCoverage( filter ) {
 		var section = filter.closest( '.aw-coverage-section' );
 		if ( ! section ) {
@@ -67,16 +147,23 @@
 			item.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
 		} );
 
-		section.querySelectorAll( '[data-aw-coverage-type]' ).forEach( function ( card ) {
-			var visible = 'all' === selected || card.getAttribute( 'data-aw-coverage-type' ) === selected;
-			card.hidden = ! visible;
-		} );
+		section.classList.add( 'is-filter-loading' );
+		section.setAttribute( 'aria-busy', 'true' );
+		loadCoverage( section, selected, 1, false );
 	}
 
 	document.addEventListener( 'click', function ( e ) {
 		var filter = e.target.closest( '[data-aw-coverage-filter]' );
 		if ( filter ) {
 			filterCoverage( filter );
+			return;
+		}
+
+		var loadMore = e.target.closest( '[data-aw-coverage-load-more]' );
+		if ( loadMore ) {
+			var section = loadMore.closest( '.aw-coverage-section' );
+			var page = parseInt( section.dataset.awCoveragePage || '1', 10 ) + 1;
+			loadCoverage( section, section.dataset.awCoverageType || 'all', page, true );
 		}
 	} );
 } )();

@@ -95,15 +95,13 @@ class AlphaWire_Projects_Templates {
 			true
 		);
 
-		if ( is_user_logged_in() ) {
-			wp_localize_script(
-				'alphawire-projects',
-				'AlphaWireProjects',
-				array(
-					'restUrl' => esc_url_raw( rest_url( AlphaWire_Projects_REST::NAMESPACE ) ),
-					'nonce'   => wp_create_nonce( 'wp_rest' ),
-				)
-			);
-		}
+		wp_localize_script(
+			'alphawire-projects',
+			'AlphaWireProjects',
+			array(
+				'restUrl' => esc_url_raw( rest_url( AlphaWire_Projects_REST::NAMESPACE ) ),
+				'nonce'   => is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '',
+			)
+		);
 	}
 }

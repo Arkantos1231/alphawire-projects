@@ -15,6 +15,16 @@ class AlphaWire_Projects_REST {
 	public static function register_routes() {
 		register_rest_route(
 			self::NAMESPACE,
+			'/projects/(?P<slug>[a-zA-Z0-9-]+)/coverage',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'get_coverage_page' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/projects/(?P<slug>[a-zA-Z0-9-]+)',
 			array(
 				'methods'             => 'GET',
@@ -33,6 +43,24 @@ class AlphaWire_Projects_REST {
 		}
 
 		return self::build_payload( $post );
+	}
+
+	public static function get_coverage_page( $request ) {
+		$slug    = $request->get_param( 'slug' );
+		$post    = get_page_by_path( $slug, OBJECT, AlphaWire_Projects_Post_Type::POST_TYPE );
+		$scope   = sanitize_key( $request->get_param( 'scope' ) ?: 'coverage' );
+		$type    = sanitize_title( $request->get_param( 'type' ) ?: 'all' );
+		$page    = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
+		$per_page = max( 1, min( 20, (int) ( $request->get_param( 'per_page' ) ?: 6 ) ) );
+
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return new WP_Error( 'not_found', 'Project not found', array( 'status' => 404 ) );
+		}
+		if ( ! in_array( $scope, array( 'coverage', 'research' ), true ) ) {
+			$scope = 'coverage';
+		}
+
+		return AlphaWire_Projects_Content_Relationships::get_coverage_page( $post->ID, $scope, $type, $page, $per_page );
 	}
 
 	/**
