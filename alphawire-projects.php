@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.0
+ * Version: 0.8.1
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.1 — Fixed "Generate / refresh draft" (the AI Summary meta box on
+ * a Project's edit screen) never actually calling OpenAI. Root cause:
+ * the meta box's own <form> (posting to admin-post.php) was nested
+ * inside WordPress's main #post edit form — invalid HTML, and browsers
+ * respond to nested <form> elements by folding the inner one's fields
+ * into the outer form rather than keeping them separate. So clicking
+ * the button silently submitted the whole "Update" post form instead
+ * (re-saving the post, no visible error) and never reached
+ * generate_draft() or OpenAI at all. Confirmed live: the OpenAI API key
+ * in Projects → Settings was in fact saving correctly the whole time —
+ * only the generate button itself was broken. Fixed by replacing the
+ * nested <form> with a plain nonce'd GET link to admin-post.php (the
+ * same pattern the v0.7.8 "Check for updates" link already uses), and
+ * updated handle_manual_trigger() to read project_id from $_GET.
  *
  * v0.8.0 — Removed the Collections feature entirely (product decision:
  * won't be used). This was the v0.7.0 "Create a collection" addition —
@@ -234,7 +249,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.0' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.1' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

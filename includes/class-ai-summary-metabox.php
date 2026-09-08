@@ -45,13 +45,34 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 		if ( $updated ) {
 			printf( '<p>%s %s</p>', esc_html__( 'Last updated:', 'alphawire-projects' ), esc_html( $updated ) );
 		}
+
+		// A meta box renders INSIDE WordPress's own #post edit form — a
+		// second, nested <form> here is invalid HTML, and browsers respond
+		// to invalid nesting by folding this form's fields into the outer
+		// one instead of keeping them separate. In practice that meant
+		// clicking this button just re-submitted the whole Update Post
+		// form to post.php (silently saving the post) and never reached
+		// admin-post.php or generate_draft() at all — no OpenAI call ever
+		// happened, no error, nothing. Fixed the same way the Updater's
+		// "Check for updates" link avoids this: a plain nonce'd GET link
+		// to admin-post.php, no <form> involved. handle_manual_trigger()
+		// reads project_id from $_GET now to match.
+		$generate_url = wp_nonce_url(
+			add_query_arg(
+				array(
+					'action'     => 'alphawire_projects_generate_summary',
+					'project_id' => $post->ID,
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'alphawire_generate_summary_' . $post->ID
+		);
 		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="alphawire_projects_generate_summary" />
-			<input type="hidden" name="project_id" value="<?php echo esc_attr( $post->ID ); ?>" />
-			<?php wp_nonce_field( 'alphawire_generate_summary_' . $post->ID ); ?>
-			<?php submit_button( __( 'Generate / refresh draft', 'alphawire-projects' ), 'secondary', 'submit', false ); ?>
-		</form>
+		<p>
+			<a href="<?php echo esc_url( $generate_url ); ?>" class="button button-secondary">
+				<?php esc_html_e( 'Generate / refresh draft', 'alphawire-projects' ); ?>
+			</a>
+		</p>
 		<p class="description">
 			<?php esc_html_e( 'Writes from this Project\'s description, timeline and published AlphaWire coverage only. Always lands as "Pending Review" — never publishes on its own.', 'alphawire-projects' ); ?>
 		</p>

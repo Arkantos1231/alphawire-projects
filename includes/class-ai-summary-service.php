@@ -77,7 +77,9 @@ class AlphaWire_Projects_AI_Summary_Service {
 	}
 
 	public function handle_manual_trigger() {
-		$project_id = isset( $_POST['project_id'] ) ? (int) $_POST['project_id'] : 0;
+		// GET, not POST — see class-ai-summary-metabox.php::render() for
+		// why this is a plain nonce'd link rather than a <form>.
+		$project_id = isset( $_GET['project_id'] ) ? (int) $_GET['project_id'] : 0;
 
 		if ( ! $project_id
 			|| ! current_user_can( 'edit_post', $project_id )
