@@ -2,9 +2,25 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.1
+ * Version: 0.8.2
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.2 — The Timeline tab on a Project's profile page
+ * (/projects/{slug}/) was empty — the timeline markup had always been
+ * rendered inside the Overview tab panel instead of the dedicated
+ * Timeline panel (id="aw-panel-timeline"), which was left as an empty
+ * self-closing div. Moved it into that panel and restyled it to match
+ * the requested reference design: a horizontally scrollable row of
+ * milestone cards connected by a thin line, each with a small dot, a
+ * formatted "Mon YYYY" date, title, description and a "Milestone N"
+ * label, plus an "AlphaWire editorial" pill badge underneath. Also
+ * switched from array_reverse() to natural chronological order (oldest
+ * first, matching the reference) and formats the raw ACF date_picker
+ * value with wp_date( 'M Y', ... ) instead of printing it raw. New CSS:
+ * .aw-timeline-scroll / .aw-tl-item / .aw-tl-dot / .aw-tl-card /
+ * .aw-tl-milestone / .aw-tl-badge (projects.css); reuses the existing
+ * .aw-timeline / .aw-tl-date / .aw-tl-title / .aw-tl-desc selectors.
  *
  * v0.8.1 — Fixed "Generate / refresh draft" (the AI Summary meta box on
  * a Project's edit screen) never actually calling OpenAI. Root cause:
@@ -249,7 +265,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.1' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.2' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

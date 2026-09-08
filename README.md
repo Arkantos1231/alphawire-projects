@@ -4,7 +4,7 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.8.0 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.8.2 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
 ## de Lovable
 
@@ -212,6 +212,39 @@ favorito/bookmark suelto en su lugar. Se borraron
 vieja de la opción `rewrite_rules` en el próximo request), el modal y la
 estrella en las tarjetas/Directory/Project Profile, el endpoint REST de
 Collections, y todo el CSS/JS asociado.
+
+### v0.8.1 — Fix del botón "Generate / refresh draft" (AI Summary)
+
+El botón nunca llegaba a llamar a OpenAI: el meta box de AI Summary
+renderizaba su propio `<form>` (hacia `admin-post.php`) anidado dentro
+del `<form id="post">` que ya usa WordPress en la pantalla de edición —
+HTML inválido, y el navegador responde a un `<form>` anidado metiendo
+sus campos dentro del formulario externo en vez de tratarlo aparte. El
+click terminaba re-enviando el formulario de "Actualizar" del post (lo
+guardaba sin avisar nada raro) y nunca llegaba a `generate_draft()` ni a
+OpenAI. La API key de OpenAI en Projects → Settings sí se guardaba bien
+todo este tiempo — solo el botón estaba roto. Se arregló reemplazando el
+`<form>` anidado por un link `GET` con nonce hacia `admin-post.php`
+(mismo patrón que ya usa el link "Check for updates" desde v0.7.8), y
+`handle_manual_trigger()` ahora lee `project_id` de `$_GET`.
+
+### v0.8.2 — La tab Timeline del Project Profile ahora muestra la timeline
+
+La tab "Timeline" de `/projects/{slug}/` estaba vacía: el markup de la
+timeline siempre se había renderizado dentro del panel de Overview en
+vez del panel dedicado (`id="aw-panel-timeline"`), que quedaba como un
+`<div>` vacío. Se movió al panel correcto y se rediseñó para igualar la
+referencia pedida: una fila con scroll horizontal de tarjetas de
+milestone conectadas por una línea fina, cada una con un punto, fecha
+formateada ("Mon YYYY"), título, descripción y una etiqueta
+"Milestone N", más un badge tipo pill "AlphaWire editorial" debajo. De
+paso se cambió de `array_reverse()` a orden cronológico natural (más
+antiguo primero, igual que la referencia) y la fecha cruda del campo
+ACF `date_picker` ahora se formatea con `wp_date( 'M Y', ... )` en vez
+de imprimirse tal cual. CSS nuevo: `.aw-timeline-scroll` / `.aw-tl-item`
+/ `.aw-tl-dot` / `.aw-tl-card` / `.aw-tl-milestone` / `.aw-tl-badge`
+(`projects.css`); reutiliza los selectores existentes `.aw-timeline` /
+`.aw-tl-date` / `.aw-tl-title` / `.aw-tl-desc`.
 
 ## Arquitectura: endpoints propios y datos de mercado
 

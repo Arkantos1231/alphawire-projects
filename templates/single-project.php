@@ -160,26 +160,6 @@ while ( have_posts() ) :
 
 		<div class="aw-profile-tab-panels">
 			<div class="aw-profile-tab-panel is-active" id="aw-panel-overview" role="tabpanel" aria-labelledby="aw-tab-overview" data-aw-profile-panel="overview">
-				<?php if ( ! empty( $project['timeline'] ) ) : ?>
-					<section class="aw-section aw-panel">
-				<div class="aw-section-header">
-					<h2><?php echo esc_html( $project['name'] ); ?> Timeline</h2>
-					<p class="aw-hint">Editorially maintained project milestones.</p>
-				</div>
-				<ol class="aw-timeline">
-					<?php foreach ( array_reverse( $project['timeline'] ) as $event ) : ?>
-						<li>
-							<span class="aw-tl-date"><?php echo esc_html( $event['date'] ?? '' ); ?></span>
-							<p class="aw-tl-title"><?php echo esc_html( $event['title'] ?? '' ); ?></p>
-							<?php if ( ! empty( $event['description'] ) ) : ?>
-								<p class="aw-tl-desc"><?php echo esc_html( $event['description'] ); ?></p>
-							<?php endif; ?>
-						</li>
-					<?php endforeach; ?>
-				</ol>
-					</section>
-				<?php endif; ?>
-
 				<?php if ( $coverage_by_type ) : ?>
 					<section class="aw-section aw-panel aw-coverage-section" data-aw-coverage-slug="<?php echo esc_attr( $project['slug'] ); ?>" data-aw-coverage-scope="coverage">
 				<div class="aw-section-header">
@@ -222,7 +202,34 @@ while ( have_posts() ) :
 				<?php endif; ?>
 			</div>
 
-			<div class="aw-profile-tab-panel" id="aw-panel-timeline" role="tabpanel" aria-labelledby="aw-tab-timeline" data-aw-profile-panel="timeline" hidden></div>
+			<div class="aw-profile-tab-panel" id="aw-panel-timeline" role="tabpanel" aria-labelledby="aw-tab-timeline" data-aw-profile-panel="timeline" hidden>
+				<?php if ( ! empty( $project['timeline'] ) ) : ?>
+					<section class="aw-section aw-panel">
+						<div class="aw-section-header">
+							<h2><?php echo esc_html( $project['name'] ); ?> Timeline</h2>
+							<p class="aw-hint">Editorially maintained project milestones.</p>
+						</div>
+						<div class="aw-timeline-scroll">
+							<ol class="aw-timeline">
+								<?php foreach ( $project['timeline'] as $i => $event ) : ?>
+									<li class="aw-tl-item">
+										<span class="aw-tl-dot" aria-hidden="true"></span>
+										<div class="aw-tl-card">
+											<span class="aw-tl-date"><?php echo esc_html( ! empty( $event['date'] ) ? wp_date( 'M Y', strtotime( $event['date'] ) ) : '' ); ?></span>
+											<p class="aw-tl-title"><?php echo esc_html( $event['title'] ?? '' ); ?></p>
+											<?php if ( ! empty( $event['description'] ) ) : ?>
+												<p class="aw-tl-desc"><?php echo esc_html( $event['description'] ); ?></p>
+											<?php endif; ?>
+											<span class="aw-tl-milestone"><?php echo esc_html( sprintf( 'Milestone %d', $i + 1 ) ); ?></span>
+										</div>
+									</li>
+								<?php endforeach; ?>
+							</ol>
+						</div>
+						<span class="aw-tl-badge">AlphaWire editorial</span>
+					</section>
+				<?php endif; ?>
+			</div>
 			<div class="aw-profile-tab-panel" id="aw-panel-coverage" role="tabpanel" aria-labelledby="aw-tab-coverage" data-aw-profile-panel="coverage" hidden>
 				<?php if ( $coverage_by_type ) : ?>
 					<section class="aw-section aw-panel aw-coverage-section" data-aw-coverage-slug="<?php echo esc_attr( $project['slug'] ); ?>" data-aw-coverage-scope="coverage">
