@@ -4,7 +4,7 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.8.2 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.8.3 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
 ## de Lovable
 
@@ -245,6 +245,32 @@ de imprimirse tal cual. CSS nuevo: `.aw-timeline-scroll` / `.aw-tl-item`
 / `.aw-tl-dot` / `.aw-tl-card` / `.aw-tl-milestone` / `.aw-tl-badge`
 (`projects.css`); reutiliza los selectores existentes `.aw-timeline` /
 `.aw-tl-date` / `.aw-tl-title` / `.aw-tl-desc`.
+
+### v0.8.3 — Tab Overview rediseñado como grid modular (referencia Hyperliquid)
+
+El tab "Overview" del Project Profile se rearmó como un grid de 3
+columnas, siguiendo una referencia visual tipo Hyperliquid: a la
+izquierda "What is {Project}?" (descripción + link "Read more" al link
+principal del Project + badge "AlphaWire editorial") y "Key Links"
+(cada link configurado, como fila); en el medio "Timeline" (vista
+previa compacta y vertical del mismo timeline de ACF, más reciente
+primero, con un link "View full timeline" que ahora cambia de tab por
+JS en vez de ser un ancla muerta); a la derecha "Market" (las mismas
+stats/sparkline que antes vivían en "Key Stats", renombrado, con badge
+"Market data · external" salvo cuando el precio es el último conocido)
+y "Top Narratives" (los términos `topic` propios del Project con un
+🔥). El header fijo arriba de los tabs (que antes tenía identidad + Key
+Stats + AI Summary) ahora solo tiene identidad (logo/nombre/ticker/
+verificado) + AI Project Summary — Key Stats y la descripción/
+narratives/links de la identidad se movieron al Overview.
+
+De paso se arregló un bug real que esto destapó: `projects.css` definía
+`.aw-timeline` dos veces — las reglas viejas de lista vertical (más
+abajo en el archivo) pisaban en silencio a las reglas horizontales de
+tarjetas agregadas en v0.8.2 para el tab Timeline, así que ese fix
+nunca se estaba viendo como se pensaba. Se renombró la versión vertical
+a `.aw-timeline-compact` / `.aw-tlc-*` (ahora solo la usa este preview
+del Overview) para que dejen de chocar.
 
 ## Arquitectura: endpoints propios y datos de mercado
 

@@ -2,9 +2,37 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.2
+ * Version: 0.8.3
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.3 — Rebuilt the Overview tab of a Project's profile page into the
+ * modular grid layout requested (reference: a Hyperliquid-style profile
+ * page). Key Stats and the description/narratives/links that used to sit
+ * in the always-visible header above the tabs moved into the Overview
+ * tab itself, as five cards: "What is {Project}?" (description + a
+ * "Read more" link to the project's primary URL + the "AlphaWire
+ * editorial" badge), "Key Links" (every configured link as a row),
+ * "Timeline" (a compact vertical preview of the same ACF timeline data,
+ * newest first, with a "View full timeline" link that switches to the
+ * Timeline tab via JS instead of a dead anchor), "Market" (the same
+ * stats/sparkline the old "Key Stats" panel showed, renamed to match the
+ * reference and its badge switched to "Market data · external" outside
+ * the stale-price case), and "Top Narratives" (this Project's own
+ * `topic` terms with a 🔥 marker). The always-visible header above the
+ * tabs now only holds the identity block (logo/name/ticker/verified) and
+ * the AI Project Summary panel. Also fixed a real bug this uncovered:
+ * projects.css defined ".aw-timeline" twice — the old vertical-list
+ * rules (further down the file) were silently overriding the horizontal
+ * card rules added for the Timeline tab in v0.8.2, so that fix was never
+ * actually rendering as intended. Renamed the vertical version to
+ * .aw-timeline-compact/.aw-tlc-* (now used only by the new Overview
+ * preview) so the two no longer collide. New JS: a small
+ * data-aw-profile-goto click handler in projects.js that activates the
+ * real tab button (keeping the tab bar and the shown panel in sync)
+ * instead of just following an anchor link. Removed the now-unused
+ * .aw-profile-identity .aw-desc / .aw-chip-row / .aw-link-row /
+ * .aw-link-pill CSS left over from the header (projects.css).
  *
  * v0.8.2 — The Timeline tab on a Project's profile page
  * (/projects/{slug}/) was empty — the timeline markup had always been
@@ -265,7 +293,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.2' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.3' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

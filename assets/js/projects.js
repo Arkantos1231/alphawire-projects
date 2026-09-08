@@ -31,6 +31,22 @@
 		var tab = e.target.closest( '[data-aw-profile-tab]' );
 		if ( tab ) {
 			activateTab( tab );
+			return;
+		}
+
+		// "View full timeline" (and similar in-page shortcuts) on the
+		// Overview tab: not a real tab button, so activate the matching
+		// tab through the real one — keeps the tab bar's active state and
+		// the shown panel in sync instead of only swapping the panel.
+		var goto = e.target.closest( '[data-aw-profile-goto]' );
+		if ( goto ) {
+			var targetId = goto.getAttribute( 'data-aw-profile-goto' );
+			var realTab = document.querySelector( '.aw-profile-tab[data-aw-profile-tab="' + targetId + '"]' );
+			if ( realTab ) {
+				e.preventDefault();
+				activateTab( realTab );
+				realTab.scrollIntoView( { behavior: 'smooth', block: 'nearest', inline: 'nearest' } );
+			}
 		}
 	} );
 

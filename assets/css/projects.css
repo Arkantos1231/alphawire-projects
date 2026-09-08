@@ -730,7 +730,7 @@
 .aw-profile-head {
 	display: grid;
 	gap: 16px;
-	grid-template-columns: minmax(0, 1fr) 280px 280px;
+	grid-template-columns: minmax(0, 1fr) 320px;
 }
 
 @media (max-width: 1000px) {
@@ -777,35 +777,6 @@
 	align-items: center;
 	gap: 10px;
 	margin-bottom: 8px;
-}
-
-.aw-profile-identity .aw-desc {
-	font-size: 13px;
-	line-height: 1.6;
-	color: var(--aw-muted);
-	max-width: 60ch;
-	margin: 8px 0 12px;
-}
-
-.aw-chip-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-bottom: 12px;
-}
-
-.aw-link-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.aw-link-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 7px 12px;
-	font-size: 12px;
 }
 
 .aw-stat-row {
@@ -872,19 +843,32 @@
 	margin: 8px 0;
 }
 
-.aw-timeline {
+/*
+ * Compact vertical Timeline module — the Overview tab's "Timeline" card
+ * (a preview; the full horizontal version lives in the Timeline tab, see
+ * .aw-timeline/.aw-tl-* above). Deliberately separate class names from
+ * that horizontal version so the two don't collide — this file used to
+ * define ".aw-timeline" twice (this vertical style, further down, was
+ * silently overriding the horizontal Timeline-tab rules above it), which
+ * is the bug this rename fixes.
+ */
+.aw-timeline-compact {
 	list-style: none;
 	margin: 0;
 	padding: 0 0 0 18px;
 	border-left: 1px solid var(--aw-border);
 }
 
-.aw-timeline li {
+.aw-tlc-item {
 	position: relative;
 	padding-bottom: 20px;
 }
 
-.aw-timeline li::before {
+.aw-tlc-item:last-child {
+	padding-bottom: 0;
+}
+
+.aw-tlc-item::before {
 	content: "";
 	position: absolute;
 	left: -23px;
@@ -892,25 +876,77 @@
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var(--aw-accent);
+	background: var(--aw-positive);
 }
 
-.aw-timeline .aw-tl-date {
+.aw-tlc-date {
+	display: block;
 	font-size: 11px;
 	color: var(--aw-muted);
 	font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
-.aw-timeline .aw-tl-title {
+.aw-tlc-title {
 	font-size: 14px;
 	font-weight: 600;
-	margin: 2px 0;
+	margin: 2px 0 4px;
+	line-height: 1.3;
 }
 
-.aw-timeline .aw-tl-desc {
+.aw-tlc-desc {
+	margin: 0;
 	font-size: 12px;
 	color: var(--aw-muted);
 	line-height: 1.5;
+}
+
+/* ---------------- Overview tab — modular grid ---------------- */
+
+.aw-overview-grid {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+	align-items: start;
+}
+
+@media (max-width: 1000px) {
+	.aw-overview-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.aw-overview-col {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
+}
+
+.aw-panel > h2 {
+	font-size: 13px;
+	font-weight: 600;
+	margin: 0 0 10px;
+}
+
+.aw-about-text {
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--aw-muted);
+	margin: 0 0 10px;
+}
+
+.aw-about-panel .aw-tl-badge {
+	margin-top: 14px;
+}
+
+.aw-link-accent {
+	color: var(--aw-accent);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.aw-narrative-flame {
+	margin-right: 4px;
 }
 
 .aw-coverage-group h3 {

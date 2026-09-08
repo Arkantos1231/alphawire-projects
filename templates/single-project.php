@@ -64,73 +64,7 @@ while ( have_posts() ) :
 							<span class="aw-chip"><?php echo esc_html( $project['ticker'] ); ?></span>
 						<?php endif; ?>
 					</div>
-					<?php if ( $project['description'] ) : ?>
-						<p class="aw-desc"><?php echo esc_html( wp_strip_all_tags( $project['description'] ) ); ?></p>
-					<?php endif; ?>
-					<?php if ( ! empty( $project['narratives'] ) ) : ?>
-						<div class="aw-chip-row">
-							<?php foreach ( $project['narratives'] as $n ) : ?>
-								<span class="aw-chip"><?php echo esc_html( $n ); ?></span>
-							<?php endforeach; ?>
-						</div>
-					<?php endif; ?>
-					<?php if ( ! empty( $project['links'] ) ) : ?>
-						<div class="aw-link-row">
-							<?php foreach ( $project['links'] as $link ) : ?>
-								<?php if ( empty( $link['url'] ) ) { continue; } ?>
-								<a class="aw-panel-hover aw-link-pill" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noreferrer noopener">
-									<?php echo esc_html( $link['label'] ? $link['label'] : $link['url'] ); ?> ↗
-								</a>
-							<?php endforeach; ?>
-						</div>
-					<?php endif; ?>
 				</div>
-			</div>
-
-			<div class="aw-panel">
-				<div class="aw-panel-title-row">
-					<h2>Key Stats</h2>
-					<?php if ( ! empty( $market['stale'] ) ) : ?>
-						<span class="aw-badge">last known price</span>
-					<?php endif; ?>
-				</div>
-				<?php if ( ! empty( $market['chart'] ) ) : ?>
-					<?php aw_projects_sparkline( $market['chart'], 260, 48 ); ?>
-				<?php endif; ?>
-				<dl>
-					<div class="aw-stat-row">
-						<dt>Price</dt>
-						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
-					</div>
-					<div class="aw-stat-row">
-						<dt>Market Cap</dt>
-						<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
-					</div>
-					<div class="aw-stat-row">
-						<dt>24h Volume</dt>
-						<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
-					</div>
-					<div class="aw-stat-row">
-						<dt>Circulating Supply</dt>
-						<dd><?php echo esc_html( $market['circulatingSupply'] ?? '—' ); ?></dd>
-					</div>
-					<div class="aw-stat-row">
-						<dt>Total Supply</dt>
-						<dd><?php echo esc_html( $market['totalSupply'] ?? '—' ); ?></dd>
-					</div>
-					<div class="aw-stat-row">
-						<dt>All-Time High</dt>
-						<dd><?php echo esc_html( $market['allTimeHigh'] ?? '—' ); ?></dd>
-					</div>
-					<?php if ( $project['launchDate'] ) : ?>
-						<div class="aw-stat-row">
-							<dt>Launched</dt>
-							<dd><?php echo esc_html( $project['launchDate'] ); ?></dd>
-						</div>
-					<?php endif; ?>
-				</dl>
-				<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
-					edited by AlphaWire editorial.</p>
 			</div>
 
 			<div class="aw-panel">
@@ -160,6 +94,126 @@ while ( have_posts() ) :
 
 		<div class="aw-profile-tab-panels">
 			<div class="aw-profile-tab-panel is-active" id="aw-panel-overview" role="tabpanel" aria-labelledby="aw-tab-overview" data-aw-profile-panel="overview">
+				<div class="aw-overview-grid">
+
+					<div class="aw-overview-col">
+						<?php if ( $project['description'] || ! empty( $project['links'] ) ) : ?>
+							<div class="aw-panel aw-about-panel">
+								<h2><?php echo esc_html( sprintf( 'What is %s?', $project['name'] ) ); ?></h2>
+								<?php if ( $project['description'] ) : ?>
+									<p class="aw-about-text"><?php echo esc_html( wp_strip_all_tags( $project['description'] ) ); ?></p>
+								<?php endif; ?>
+								<?php
+								$primary_link = null;
+								foreach ( $project['links'] as $link ) {
+									if ( ! empty( $link['url'] ) ) {
+										$primary_link = $link;
+										break;
+									}
+								}
+								?>
+								<?php if ( $primary_link ) : ?>
+									<a class="aw-link-accent" href="<?php echo esc_url( $primary_link['url'] ); ?>" target="_blank" rel="noreferrer noopener">Read more →</a>
+								<?php endif; ?>
+								<span class="aw-tl-badge">AlphaWire editorial</span>
+							</div>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $project['links'] ) ) : ?>
+							<div class="aw-panel">
+								<h2>Key Links</h2>
+								<?php foreach ( $project['links'] as $link ) : ?>
+									<?php if ( empty( $link['url'] ) ) { continue; } ?>
+									<a class="aw-list-row" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noreferrer noopener">
+										<span><?php echo esc_html( $link['label'] ? $link['label'] : $link['url'] ); ?></span>
+										<span aria-hidden="true">↗</span>
+									</a>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+					</div>
+
+					<div class="aw-overview-col">
+						<?php if ( ! empty( $project['timeline'] ) ) : ?>
+							<div class="aw-panel">
+								<div class="aw-panel-title-row">
+									<h2>Timeline</h2>
+									<a class="aw-link-accent" href="#aw-panel-timeline" data-aw-profile-goto="timeline">View full timeline →</a>
+								</div>
+								<ol class="aw-timeline-compact">
+									<?php foreach ( array_reverse( $project['timeline'] ) as $event ) : ?>
+										<li class="aw-tlc-item">
+											<span class="aw-tlc-date"><?php echo esc_html( ! empty( $event['date'] ) ? wp_date( 'M Y', strtotime( $event['date'] ) ) : '' ); ?></span>
+											<p class="aw-tlc-title"><?php echo esc_html( $event['title'] ?? '' ); ?></p>
+											<?php if ( ! empty( $event['description'] ) ) : ?>
+												<p class="aw-tlc-desc"><?php echo esc_html( $event['description'] ); ?></p>
+											<?php endif; ?>
+										</li>
+									<?php endforeach; ?>
+								</ol>
+							</div>
+						<?php endif; ?>
+					</div>
+
+					<div class="aw-overview-col">
+						<div class="aw-panel">
+							<div class="aw-panel-title-row">
+								<h2>Market</h2>
+								<span class="aw-badge"><?php echo esc_html( ! empty( $market['stale'] ) ? 'last known price' : 'Market data · external' ); ?></span>
+							</div>
+							<?php if ( ! empty( $market['chart'] ) ) : ?>
+								<?php aw_projects_sparkline( $market['chart'], 260, 48 ); ?>
+							<?php endif; ?>
+							<dl>
+								<div class="aw-stat-row">
+									<dt>Price</dt>
+									<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+								</div>
+								<div class="aw-stat-row">
+									<dt>Market Cap</dt>
+									<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+								</div>
+								<div class="aw-stat-row">
+									<dt>24h Volume</dt>
+									<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+								</div>
+								<div class="aw-stat-row">
+									<dt>Circulating Supply</dt>
+									<dd><?php echo esc_html( $market['circulatingSupply'] ?? '—' ); ?></dd>
+								</div>
+								<div class="aw-stat-row">
+									<dt>Total Supply</dt>
+									<dd><?php echo esc_html( $market['totalSupply'] ?? '—' ); ?></dd>
+								</div>
+								<div class="aw-stat-row">
+									<dt>All-Time High</dt>
+									<dd><?php echo esc_html( $market['allTimeHigh'] ?? '—' ); ?></dd>
+								</div>
+								<?php if ( $project['launchDate'] ) : ?>
+									<div class="aw-stat-row">
+										<dt>Launched</dt>
+										<dd><?php echo esc_html( $project['launchDate'] ); ?></dd>
+									</div>
+								<?php endif; ?>
+							</dl>
+							<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
+								edited by AlphaWire editorial.</p>
+						</div>
+
+						<?php if ( ! empty( $project['narratives'] ) ) : ?>
+							<div class="aw-panel">
+								<h2>Top Narratives</h2>
+								<?php foreach ( $project['narratives'] as $n ) : ?>
+									<div class="aw-list-row">
+										<span><span class="aw-narrative-flame" aria-hidden="true">🔥</span> <?php echo esc_html( $n ); ?></span>
+									</div>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+					</div>
+
+				</div>
+
 				<?php if ( $coverage_by_type ) : ?>
 					<section class="aw-section aw-panel aw-coverage-section" data-aw-coverage-slug="<?php echo esc_attr( $project['slug'] ); ?>" data-aw-coverage-scope="coverage">
 				<div class="aw-section-header">
