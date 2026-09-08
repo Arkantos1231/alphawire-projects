@@ -2,9 +2,35 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.3
+ * Version: 0.8.4
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.4 — v0.8.3 went too far: it stripped the description, narrative
+ * chips, link buttons and the "Key Stats" panel out of the
+ * always-visible header entirely, moving that content only into the new
+ * Overview tab cards. The reference design actually keeps both — the
+ * header stays as a full always-visible summary (identity, description,
+ * narratives, links, Key Stats, AI Project Summary) regardless of which
+ * tab is open, and the Overview tab additionally shows its own modular
+ * cards ("What is X?", Key Links, a compact Timeline preview, Market,
+ * Top Narratives) for a fuller read. Restored the header to what it had
+ * before v0.8.3 (back to a 3-column layout: identity | Key Stats | AI
+ * Project Summary) and restored the .aw-desc/.aw-chip-row/.aw-link-row/
+ * .aw-link-pill CSS v0.8.3 had removed as "dead" — it wasn't dead, it
+ * was still needed here. The v0.8.3 Overview grid itself is unchanged.
+ *
+ * Not done yet, still needs a product decision before building: the
+ * newer reference screenshot also shows a few things with no existing
+ * data behind them — a "#1 in {category}" rank badge, a short one-line
+ * tag next to the ticker separate from the paragraph description (today
+ * there's only one description field, so this can't be built without
+ * either reusing the same text twice or adding a new field), per-
+ * platform icons on the link buttons (Website/X/Discord/Docs/GitHub)
+ * instead of a generic label, an "EDITORIAL" badge on the Launched date,
+ * and AI Summary action buttons ("Review in Editorial Preview",
+ * "Report an issue") that aren't real features anywhere in this plugin
+ * yet — only "Generate / refresh draft" exists today.
  *
  * v0.8.3 — Rebuilt the Overview tab of a Project's profile page into the
  * modular grid layout requested (reference: a Hyperliquid-style profile
@@ -293,7 +319,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.3' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.4' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

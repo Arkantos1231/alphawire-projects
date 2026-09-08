@@ -4,7 +4,7 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.8.3 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.8.4 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
 ## de Lovable
 
@@ -271,6 +271,36 @@ tarjetas agregadas en v0.8.2 para el tab Timeline, así que ese fix
 nunca se estaba viendo como se pensaba. Se renombró la versión vertical
 a `.aw-timeline-compact` / `.aw-tlc-*` (ahora solo la usa este preview
 del Overview) para que dejen de chocar.
+
+### v0.8.4 — El header vuelve a tener descripción/links/Key Stats
+
+v0.8.3 se pasó de rosca: sacó la descripción, las narrativas, los
+botones de link y el panel "Key Stats" del header fijo (arriba de los
+tabs), moviéndolos únicamente a las tarjetas nuevas del tab Overview.
+El diseño de referencia en realidad mantiene las dos cosas: el header
+sigue siendo un resumen siempre visible sin importar qué tab esté
+abierto (identidad, descripción, narrativas, links, Key Stats, AI
+Project Summary), y el tab Overview además muestra sus propias
+tarjetas modulares ("What is X?", Key Links, preview de Timeline,
+Market, Top Narratives) para una lectura más completa. Se restauró el
+header a como estaba antes de v0.8.3 (layout de 3 columnas: identidad |
+Key Stats | AI Project Summary) y se restauró el CSS
+`.aw-desc`/`.aw-chip-row`/`.aw-link-row`/`.aw-link-pill` que v0.8.3
+había borrado creyendo que estaba muerto — no lo estaba, seguía
+haciendo falta acá. El grid del Overview de v0.8.3 no cambió.
+
+Quedó pendiente, a la espera de una decisión de producto antes de
+construirlo: el screenshot de referencia más reciente también muestra
+cosas sin datos reales detrás todavía — un badge de ranking ("#1 in
+{categoría}"), una frase corta al lado del ticker separada del párrafo
+de descripción (hoy solo existe un campo de descripción, así que esto
+no se puede construir sin repetir el mismo texto dos veces o sin sumar
+un campo nuevo), íconos por plataforma en los botones de link
+(Website/X/Discord/Docs/GitHub) en vez de una etiqueta genérica, un
+badge "EDITORIAL" en la fecha de lanzamiento, y botones de acción en AI
+Summary ("Review in Editorial Preview", "Report an issue") que hoy no
+son funciones reales en ningún lado del plugin — solo existe
+"Generate / refresh draft".
 
 ## Arquitectura: endpoints propios y datos de mercado
 

@@ -64,7 +64,73 @@ while ( have_posts() ) :
 							<span class="aw-chip"><?php echo esc_html( $project['ticker'] ); ?></span>
 						<?php endif; ?>
 					</div>
+					<?php if ( $project['description'] ) : ?>
+						<p class="aw-desc"><?php echo esc_html( wp_strip_all_tags( $project['description'] ) ); ?></p>
+					<?php endif; ?>
+					<?php if ( ! empty( $project['narratives'] ) ) : ?>
+						<div class="aw-chip-row">
+							<?php foreach ( $project['narratives'] as $n ) : ?>
+								<span class="aw-chip"><?php echo esc_html( $n ); ?></span>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+					<?php if ( ! empty( $project['links'] ) ) : ?>
+						<div class="aw-link-row">
+							<?php foreach ( $project['links'] as $link ) : ?>
+								<?php if ( empty( $link['url'] ) ) { continue; } ?>
+								<a class="aw-panel-hover aw-link-pill" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noreferrer noopener">
+									<?php echo esc_html( $link['label'] ? $link['label'] : $link['url'] ); ?> ↗
+								</a>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
 				</div>
+			</div>
+
+			<div class="aw-panel">
+				<div class="aw-panel-title-row">
+					<h2>Key Stats</h2>
+					<?php if ( ! empty( $market['stale'] ) ) : ?>
+						<span class="aw-badge">last known price</span>
+					<?php endif; ?>
+				</div>
+				<?php if ( ! empty( $market['chart'] ) ) : ?>
+					<?php aw_projects_sparkline( $market['chart'], 260, 48 ); ?>
+				<?php endif; ?>
+				<dl>
+					<div class="aw-stat-row">
+						<dt>Price</dt>
+						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+					</div>
+					<div class="aw-stat-row">
+						<dt>Market Cap</dt>
+						<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+					</div>
+					<div class="aw-stat-row">
+						<dt>24h Volume</dt>
+						<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+					</div>
+					<div class="aw-stat-row">
+						<dt>Circulating Supply</dt>
+						<dd><?php echo esc_html( $market['circulatingSupply'] ?? '—' ); ?></dd>
+					</div>
+					<div class="aw-stat-row">
+						<dt>Total Supply</dt>
+						<dd><?php echo esc_html( $market['totalSupply'] ?? '—' ); ?></dd>
+					</div>
+					<div class="aw-stat-row">
+						<dt>All-Time High</dt>
+						<dd><?php echo esc_html( $market['allTimeHigh'] ?? '—' ); ?></dd>
+					</div>
+					<?php if ( $project['launchDate'] ) : ?>
+						<div class="aw-stat-row">
+							<dt>Launched</dt>
+							<dd><?php echo esc_html( $project['launchDate'] ); ?></dd>
+						</div>
+					<?php endif; ?>
+				</dl>
+				<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
+					edited by AlphaWire editorial.</p>
 			</div>
 
 			<div class="aw-panel">

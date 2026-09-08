@@ -730,7 +730,7 @@
 .aw-profile-head {
 	display: grid;
 	gap: 16px;
-	grid-template-columns: minmax(0, 1fr) 320px;
+	grid-template-columns: minmax(0, 1fr) 280px 280px;
 }
 
 @media (max-width: 1000px) {
@@ -777,6 +777,35 @@
 	align-items: center;
 	gap: 10px;
 	margin-bottom: 8px;
+}
+
+.aw-profile-identity .aw-desc {
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--aw-muted);
+	max-width: 60ch;
+	margin: 8px 0 12px;
+}
+
+.aw-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.aw-link-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.aw-link-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 12px;
+	font-size: 12px;
 }
 
 .aw-stat-row {
