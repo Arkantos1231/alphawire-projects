@@ -57,9 +57,6 @@ function aw_projects_logo( $card, $size = 40 ) {
  * The Directory grid card — shared by the filtered-results grid, Editor's
  * Picks and the paginated All Projects grid. $card is the lightweight
  * shape from AlphaWire_Projects_Directory_REST's card()/query_projects().
- *
- * A <div> wrapper (not the old bare <a>) because the save/collection star
- * is now a sibling button, not something that can nest inside the link.
  */
 function aw_projects_render_card( $card ) {
 	?>
@@ -84,7 +81,6 @@ function aw_projects_render_card( $card ) {
 				<?php aw_projects_change( $card['change24h'] ); ?>
 			</span>
 		</a>
-		<?php aw_projects_save_button( $card['id'] ); ?>
 	</div>
 	<?php
 }
@@ -93,7 +89,7 @@ function aw_projects_render_card( $card ) {
  * The numbered Trending Projects strip card — rank badge, logo, name,
  * ticker, tagline, 24h change, real 24h volume (compact — "18.4K" style,
  * matches the Lovable prototype's look but from real CoinGecko data, see
- * class-market-data-service.php's volume24hRaw), and the save star.
+ * class-market-data-service.php's volume24hRaw).
  */
 function aw_projects_render_trending_card( $card, $rank ) {
 	?>
@@ -111,7 +107,6 @@ function aw_projects_render_trending_card( $card, $rank ) {
 				<span class="aw-trend-volume"><?php echo esc_html( aw_projects_compact_number( $card['volume24h'] ?? null ) ); ?></span>
 			</div>
 		</a>
-		<?php aw_projects_save_button( $card['id'] ); ?>
 	</div>
 	<?php
 }
@@ -140,110 +135,6 @@ function aw_projects_compact_number( $value ) {
 	}
 
 	return ( $neg ? '-' : '' ) . $out;
-}
-
-/**
- * Every Project the current user has saved into any Collection, flattened
- * to one array of IDs and memoized per request — so rendering a grid of
- * 24 cards costs one lookup, not 24.
- */
-function aw_projects_current_user_saved_ids() {
-	static $ids = null;
-	if ( null !== $ids ) {
-		return $ids;
-	}
-
-	$ids = array();
-	if ( is_user_logged_in() && class_exists( 'AlphaWire_Projects_Collections' ) ) {
-		foreach ( AlphaWire_Projects_Collections::get_all_public( get_current_user_id() ) as $collection ) {
-			foreach ( (array) ( $collection['project_ids'] ?? array() ) as $id ) {
-				$ids[] = (int) $id;
-			}
-		}
-		$ids = array_values( array_unique( $ids ) );
-	}
-	return $ids;
-}
-
-/**
- * The star/save control on every card. Logged out, it's a plain link to
- * the login page (Thirdweb SSO) with a redirect back to the current page —
- * clicking it never silently fails, it explains what to do. Logged in,
- * it's a real toggle button that assets/js/projects.js wires up against
- * the Collections REST endpoints.
- *
- * The icon is an inline SVG outline star (Lucide's "star" path — chosen
- * over a hand-drawn one because its rounder inner vertices stay legible as
- * a hollow outline at ~18px; a tighter star shape reads as solid at that
- * size even with fill:none) rather than the ★/☆ text characters the first
- * cut used — those render inconsistently across platforms (weight, size,
- * some render as a colour emoji) and, boxed in the small bordered circle
- * button v0.7.x had around them, looked heavy next to the rest of the UI.
- * One path serves both states: unsaved is `fill:none` (outline only, via
- * CSS), and `.is-saved` switches it to `fill:currentColor` — see the
- * "Save button" section of projects.css, including why that CSS has to
- * fight the theme's own `svg path { fill/stroke: #fff !important }`
- * dark-mode rule with higher specificity rather than just `!important`.
- */
-function aw_projects_star_icon() {
-	return '<svg class="aw-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
-		. '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />'
-		. '</svg>';
-}
-
-function aw_projects_save_button( $project_id ) {
-	if ( ! is_user_logged_in() ) {
-		if ( function_exists( 'wp_login_url' ) ) {
-			$current = ( isset( $_SERVER['REQUEST_URI'] ) ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
-			printf(
-				'<a class="aw-save-btn" href="%s" title="%s" aria-label="%s">%s</a>',
-				esc_url( wp_login_url( home_url( $current ) ) ),
-				esc_attr__( 'Log in to save this Project', 'alphawire-projects' ),
-				esc_attr__( 'Log in to save this Project', 'alphawire-projects' ),
-				aw_projects_star_icon()
-			);
-		}
-		return;
-	}
-
-	$saved = in_array( (int) $project_id, aw_projects_current_user_saved_ids(), true );
-	printf(
-		'<button type="button" class="aw-save-btn%s" data-aw-save-project="%d" aria-pressed="%s" title="%s">%s</button>',
-		$saved ? ' is-saved' : '',
-		(int) $project_id,
-		$saved ? 'true' : 'false',
-		$saved ? esc_attr__( 'Manage collections for this Project', 'alphawire-projects' ) : esc_attr__( 'Save to a collection', 'alphawire-projects' ),
-		aw_projects_star_icon()
-	);
-}
-
-/**
- * One shared modal, printed once per page (only for logged-in users — see
- * archive-project.php/single-project.php), that assets/js/projects.js
- * opens and populates from the Collections REST endpoints. Static markup
- * only; no collection data is server-rendered into it, so it's identical
- * regardless of which star on the page triggered it.
- */
-function aw_projects_render_collection_modal() {
-	?>
-	<div id="aw-collection-modal" class="aw-modal" hidden>
-		<div class="aw-modal-backdrop" data-aw-modal-close></div>
-		<div class="aw-modal-panel" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Save to a collection', 'alphawire-projects' ); ?>">
-			<div class="aw-modal-head">
-				<h3><?php esc_html_e( 'Save to a collection', 'alphawire-projects' ); ?></h3>
-				<button type="button" class="aw-modal-close" data-aw-modal-close aria-label="<?php esc_attr_e( 'Close', 'alphawire-projects' ); ?>">×</button>
-			</div>
-			<div class="aw-modal-list" data-aw-collection-list>
-				<p class="aw-muted"><?php esc_html_e( 'Loading your collections…', 'alphawire-projects' ); ?></p>
-			</div>
-			<form class="aw-modal-new" data-aw-new-collection-form>
-				<input type="text" maxlength="60" placeholder="<?php esc_attr_e( 'New collection name', 'alphawire-projects' ); ?>" data-aw-new-collection-name required />
-				<button type="submit" class="aw-btn"><?php esc_html_e( 'Create', 'alphawire-projects' ); ?></button>
-			</form>
-			<p class="aw-modal-error" data-aw-modal-error hidden></p>
-		</div>
-	</div>
-	<?php
 }
 
 /**

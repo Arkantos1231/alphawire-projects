@@ -329,15 +329,6 @@ class AlphaWire_Projects_Directory_REST {
 	}
 
 	/**
-	 * Public entry point for other classes that need the same lightweight
-	 * card shape (e.g. Collections rendering a user's saved Projects)
-	 * without duplicating this mapping.
-	 */
-	public static function card_public( $post ) {
-		return self::card( $post );
-	}
-
-	/**
 	 * Lightweight shape for list/card contexts — full detail (timeline,
 	 * coverage, AI summary…) only lives on the single-project endpoint.
 	 */

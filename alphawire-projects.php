@@ -2,9 +2,30 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.7.9
+ * Version: 0.8.0
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.0 — Removed the Collections feature entirely (product decision:
+ * won't be used). This was the v0.7.0 "Create a collection" addition —
+ * named, multi-project lists a reader could save Projects into via a
+ * star on every card. Since the save star's only purpose was "save to a
+ * collection", removing Collections meant removing the star with it —
+ * there is no separate plain-favorite feature left behind. Gone:
+ * includes/class-collections.php and templates/collections.php (deleted),
+ * the /projects/collections/ rewrite rule and its aw_projects_view query
+ * var (class-post-type.php — REWRITE_VERSION bumped to 7 so the live
+ * site's rewrite_rules option drops the stale rule on the next request),
+ * the "My Collections" template_include routing (class-templates.php),
+ * the save-star button/modal/current-user-saved-ids helpers
+ * (template-functions.php), the sidebar "Create a collection" CTA and
+ * "View my collections" link (archive-project.php), the star on the
+ * Project Profile header (single-project.php), the Collections REST
+ * surface's card_public() helper (class-directory-rest-api.php), and all
+ * of the .aw-collection-cta / .aw-save-btn / .aw-modal (and its
+ * sub-parts) / .aw-collection-row / .aw-collections-toolbar / .aw-btn /
+ * .aw-btn-ghost / .aw-sidebar-link CSS plus the whole save/collections JS
+ * module (projects.css, projects.js).
  *
  * v0.7.9 — Fixed a route collision that made
  * /projects/trending, /projects/recently-launched,
@@ -213,7 +234,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.7.9' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.0' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -232,7 +253,6 @@ require_once ALPHAWIRE_PROJECTS_PATH . 'includes/template-functions.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-templates.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-csv-importer.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-updater.php';
-require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-collections.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-activator.php';
 
 final class AlphaWire_Projects {
@@ -281,7 +301,6 @@ final class AlphaWire_Projects {
 		AlphaWire_Projects_Templates::hooks();
 		AlphaWire_Projects_CSV_Importer::hooks();
 		AlphaWire_Projects_Updater::hooks();
-		AlphaWire_Projects_Collections::hooks();
 	}
 }
 

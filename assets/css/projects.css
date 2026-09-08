@@ -208,55 +208,6 @@
 	opacity: 0.85;
 }
 
-.aw-collection-cta {
-	border: 1px solid var(--aw-border);
-	border-radius: var(--aw-radius);
-	background: var(--aw-surface);
-	padding: 14px;
-}
-
-.aw-collection-cta strong {
-	display: block;
-	font-size: 13px;
-	margin-bottom: 4px;
-}
-
-.aw-collection-cta p {
-	margin: 0 0 12px;
-	font-size: 12px;
-	color: var(--aw-muted);
-	line-height: 1.5;
-}
-
-.aw-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	background: var(--aw-accent);
-	color: #14161a;
-	border: none;
-	border-radius: var(--aw-radius);
-	padding: 8px 14px;
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-.aw-btn-ghost {
-	background: transparent;
-	color: var(--aw-text);
-	border: 1px solid var(--aw-border-strong);
-	width: 100%;
-}
-
-.aw-sidebar-link {
-	display: block;
-	margin-top: 10px;
-	font-size: 12px;
-	color: var(--aw-accent);
-	text-align: center;
-}
-
 .aw-directory-main {
 	min-width: 0;
 }
@@ -366,19 +317,9 @@
 
 .aw-card-link {
 	padding: 14px;
-	/* Extra right padding so the price/change column can never render
-	   under the absolutely-positioned save star in the corner — without
-	   this the two were visually overlapping on narrower cards. */
-	padding-right: 40px;
 	display: flex;
 	gap: 10px;
 	align-items: center;
-}
-
-.aw-card .aw-save-btn {
-	position: absolute;
-	top: 8px;
-	right: 8px;
 }
 
 .aw-card .aw-logo {
@@ -569,12 +510,6 @@
 	color: var(--aw-muted);
 }
 
-.aw-trend-card .aw-save-btn {
-	position: absolute;
-	bottom: 10px;
-	right: 10px;
-}
-
 .aw-two-col {
 	display: grid;
 	gap: 10px;
@@ -587,79 +522,7 @@
 	}
 }
 
-/* ---------------- Save button + Collections modal ---------------- */
-
-/*
- * v0.7.x drew this as a bordered circle chip with a ★/☆ text glyph inside —
- * boxy next to the rest of the UI, and the text glyph renders inconsistently
- * across platforms/fonts. Now a bare inline SVG outline star (see
- * aw_projects_star_icon() in template-functions.php), no background or
- * border at all — matches the Lovable reference, which never puts a box
- * around this icon anywhere it appears. One SVG path serves both states:
- * unsaved is stroke-only, .is-saved switches it to a solid fill.
- *
- * The theme itself carries a site-wide dark-mode rule that forces every
- * SVG's fill AND stroke to white — `body.dark-mode svg:not(.alphaclub-
- * signal *) path { fill:#fff!important; stroke:#fff!important; }` — which
- * is exactly specific enough (2 classes + 3 type selectors) to beat a
- * naive `.aw-save-btn .aw-star-icon path { ... !important }` override (2
- * classes + 1 type: loses the specificity tie-break). Confirmed live —
- * even an inline `style="fill:none"` on the path lost to it. The fix is
- * simply out-specifying it (3 classes beats their 2, full stop, no need to
- * match their type-selector count) by qualifying every rule below with the
- * plugin's own .aw-projects wrapper, which every one of these pages has.
- *
- * A second, separate theme rule bit the button element itself, even after
- * the above: `[type="button"], [type="submit"], button { border:1px solid
- * #c36; padding:.5rem 1rem; }` — a global form-control reset. Our button
- * has `type="button"` (see aw_projects_save_button() in
- * template-functions.php), so `[type="button"]` matches it, and an
- * attribute selector is the same specificity tier as a class — so a bare
- * `.aw-save-btn { border:none }` only *ties* it, and whichever stylesheet
- * loads later wins that tie (the theme's did). Confirmed live via
- * getComputedStyle: a 52x42px box with a pink 1px border, nothing like the
- * plain 18px icon this was supposed to be. Same fix as above — qualify
- * with .aw-projects so it's unambiguously 2 classes vs. their 1.
- */
-.aw-projects .aw-save-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 6px;
-	padding: 5px;
-	border: none;
-	background: none;
-	color: var(--aw-muted);
-	cursor: pointer;
-}
-
-.aw-save-btn .aw-star-icon {
-	width: 18px;
-	height: 18px;
-}
-
-.aw-projects .aw-save-btn .aw-star-icon path {
-	stroke: currentColor !important;
-	stroke-width: 2 !important;
-	fill: none !important;
-	transition: fill 0.15s ease, stroke 0.15s ease;
-}
-
-.aw-projects .aw-save-btn.is-saved {
-	color: var(--aw-accent);
-}
-
-.aw-projects .aw-save-btn.is-saved .aw-star-icon path {
-	fill: currentColor !important;
-}
-
-.aw-projects .aw-save-btn:hover {
-	color: var(--aw-accent);
-}
-
-.aw-profile-save {
-	margin: 8px 0 0;
-}
+/* ---------------- Project Profile tabs ---------------- */
 
 .aw-profile-tabs {
 	display: flex;
@@ -693,147 +556,6 @@
 
 .aw-profile-tab-panel[hidden] {
 	display: none;
-}
-
-.aw-profile-save .aw-save-btn {
-	position: static;
-	border: 1px solid var(--aw-border);
-	background: var(--aw-surface-2);
-	border-radius: var(--aw-radius);
-	padding: 6px 12px;
-	font-size: 12px;
-	color: var(--aw-text);
-}
-
-.aw-profile-save .aw-save-btn.is-saved {
-	border-color: rgba(200, 243, 35, 0.4);
-	color: var(--aw-accent);
-}
-
-.aw-profile-save .aw-save-btn::after {
-	content: " Save";
-}
-
-.aw-modal {
-	position: fixed;
-	inset: 0;
-	z-index: 9999;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.aw-modal[hidden] {
-	display: none;
-}
-
-.aw-modal-backdrop {
-	position: absolute;
-	inset: 0;
-	background: rgba(10, 12, 14, 0.6);
-}
-
-.aw-modal-panel {
-	position: relative;
-	width: min(360px, calc(100vw - 32px));
-	max-height: min(70vh, 480px);
-	overflow-y: auto;
-	background: var(--aw-surface);
-	border: 1px solid var(--aw-border-strong);
-	border-radius: var(--aw-radius);
-	padding: 18px;
-	color: var(--aw-text);
-	font-family: inherit;
-}
-
-.aw-modal-head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 12px;
-}
-
-.aw-modal-head h3 {
-	font-size: 14px;
-	margin: 0;
-}
-
-.aw-modal-close {
-	background: none;
-	border: none;
-	color: var(--aw-muted);
-	font-size: 18px;
-	cursor: pointer;
-	line-height: 1;
-}
-
-.aw-modal-list {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	margin-bottom: 14px;
-}
-
-.aw-collection-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 4px;
-	font-size: 13px;
-	border-bottom: 1px solid var(--aw-border);
-	cursor: pointer;
-}
-
-.aw-collection-row span:first-of-type {
-	flex: 1;
-}
-
-.aw-collection-row:last-child {
-	border-bottom: none;
-}
-
-.aw-modal-new {
-	display: flex;
-	gap: 6px;
-}
-
-.aw-modal-new input[type="text"] {
-	flex: 1;
-	background: var(--aw-surface-2);
-	border: 1px solid var(--aw-border);
-	color: var(--aw-text);
-	border-radius: var(--aw-radius);
-	padding: 8px 10px;
-	font-size: 12px;
-}
-
-.aw-modal-error {
-	color: var(--aw-negative);
-	font-size: 12px;
-	margin: 10px 0 0;
-}
-
-/* ---------------- My Collections ---------------- */
-
-.aw-collections-toolbar {
-	margin-top: 20px;
-}
-
-.aw-collections-toolbar .aw-btn {
-	width: auto;
-	padding: 9px 16px;
-}
-
-.aw-collection-actions {
-	display: flex;
-	gap: 12px;
-}
-
-.aw-collection-actions button {
-	background: none;
-	border: none;
-	padding: 0;
-	cursor: pointer;
 }
 
 /*

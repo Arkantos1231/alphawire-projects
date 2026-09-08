@@ -2,16 +2,14 @@
 /**
  * Directory (/projects/) — build plan Phase 3, restyled to match the
  * Lovable prototype's layout at product's request: a left sidebar
- * (Explore nav + Categories + the Collections CTA) instead of a top
- * filter bar, search moved to the header.
+ * (Explore nav + Categories) instead of a top filter bar, search moved to
+ * the header.
  *
  * Still server-rendered on purpose (no client-side fetch loop against our
  * own REST API): filtering reads plain GET params and runs the exact same
  * WP_Query logic the REST /projects endpoint uses, via
  * AlphaWire_Projects_Directory_REST::query_projects(). get_header()/
- * get_footer() pull in the theme's real nav, ticker bar and footer. The
- * one piece of client-side JS on this page (assets/js/projects.js) is the
- * save-to-collection star — everything else still works with JS off.
+ * get_footer() pull in the theme's real nav, ticker bar and footer.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -79,17 +77,6 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 				<?php endforeach; ?>
 			</div>
 		<?php endif; ?>
-
-		<div class="aw-collection-cta">
-			<strong>Create a collection</strong>
-			<p>Save and organize your favorite projects.</p>
-			<?php if ( is_user_logged_in() ) : ?>
-				<button type="button" class="aw-btn aw-btn-ghost" data-aw-new-collection>+ New collection</button>
-			<?php else : ?>
-				<a class="aw-btn aw-btn-ghost" href="<?php echo esc_url( wp_login_url( home_url( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/' ) ) ); ?>">Log in to start</a>
-			<?php endif; ?>
-			<a class="aw-sidebar-link" href="<?php echo esc_url( add_query_arg( array(), trailingslashit( $archive_url ) . 'collections/' ) ); ?>">View my collections</a>
-		</div>
 	</aside>
 
 	<main class="aw-directory-main">
@@ -313,7 +300,4 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 </div>
 
 <?php
-if ( is_user_logged_in() ) {
-	aw_projects_render_collection_modal();
-}
 get_footer();
