@@ -90,14 +90,15 @@ while ( have_posts() ) :
 			<div class="aw-panel">
 				<div class="aw-panel-title-row">
 					<h2>Key Stats</h2>
-					<?php if ( ! empty( $market['stale'] ) ) : ?>
-						<span class="aw-badge">last known price</span>
-					<?php endif; ?>
+					<span class="aw-badge-text"><?php echo esc_html( ! empty( $market['stale'] ) ? 'Last known price' : 'Live market data' ); ?></span>
 				</div>
-				<?php if ( ! empty( $market['chart'] ) ) : ?>
-					<?php aw_projects_sparkline( $market['chart'], 260, 48 ); ?>
-				<?php endif; ?>
 				<dl>
+					<?php if ( $project['ticker'] ) : ?>
+						<div class="aw-stat-row">
+							<dt>Token</dt>
+							<dd><?php echo esc_html( $project['ticker'] ); ?></dd>
+						</div>
+					<?php endif; ?>
 					<div class="aw-stat-row">
 						<dt>Price</dt>
 						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
@@ -124,13 +125,15 @@ while ( have_posts() ) :
 					</div>
 					<?php if ( $project['launchDate'] ) : ?>
 						<div class="aw-stat-row">
-							<dt>Launched</dt>
+							<dt>Launched <span class="aw-editorial-tag">Editorial</span></dt>
 							<dd><?php echo esc_html( $project['launchDate'] ); ?></dd>
 						</div>
 					<?php endif; ?>
 				</dl>
-				<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
-					edited by AlphaWire editorial.</p>
+				<div class="aw-panel-divider"></div>
+				<span class="aw-badge">Market data · external</span>
+				<p class="aw-panel-footnote">Market data — read only, never edited by AlphaWire editorial. Launch
+					date is editorially maintained.</p>
 			</div>
 
 			<div class="aw-panel">

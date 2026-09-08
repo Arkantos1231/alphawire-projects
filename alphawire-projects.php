@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.4
+ * Version: 0.8.5
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.5 — Restyled the header's "Key Stats" panel to match the
+ * reference pixel-for-pixel: dropped the sparkline chart (that stays
+ * exclusive to the Overview tab's "Market" card — Key Stats is meant to
+ * be the compact text-only version), added a "Token" row at the top
+ * (the Project's ticker), replaced the conditional "last known price"
+ * pill with a small plain-text label next to the heading that always
+ * shows ("Live market data" normally, "Last known price" when the
+ * cached market data is stale — no invented "Mock market data" label,
+ * since ours is real CoinGecko data, not mock), added a small
+ * "Editorial" pill next to the "Launched" row (it's the one stat here
+ * that's editorially set rather than pulled from the market API), and
+ * added a divider + a "Market data · external" pill + the two-line
+ * footnote below the stat list. New CSS: .aw-badge-text /
+ * .aw-editorial-tag / .aw-panel-divider / .aw-panel-footnote.
  *
  * v0.8.4 — v0.8.3 went too far: it stripped the description, narrative
  * chips, link buttons and the "Key Stats" panel out of the
@@ -319,7 +334,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.4' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.5' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

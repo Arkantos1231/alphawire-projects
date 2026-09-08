@@ -4,7 +4,7 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.8.4 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.8.5 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
 ## de Lovable
 
@@ -301,6 +301,23 @@ badge "EDITORIAL" en la fecha de lanzamiento, y botones de acción en AI
 Summary ("Review in Editorial Preview", "Report an issue") que hoy no
 son funciones reales en ningún lado del plugin — solo existe
 "Generate / refresh draft".
+
+### v0.8.5 — Key Stats calcado a la referencia
+
+Se restyleó el panel "Key Stats" del header para que coincida con la
+referencia al pixel: sin gráfico sparkline (eso se queda exclusivo de
+la tarjeta "Market" del tab Overview — Key Stats es la versión
+compacta, solo texto), fila nueva "Token" arriba (el ticker del
+Project), la pill condicional "last known price" pasó a ser una
+etiqueta de texto plano al lado del título que siempre se muestra
+("Live market data" normalmente, "Last known price" cuando el dato de
+mercado en caché está vencido — sin inventar "Mock market data" como
+dice la referencia, porque acá el dato es real de CoinGecko, no mock),
+una pill chiquita "Editorial" al lado de la fila "Launched" (es el
+único dato ahí que se carga a mano en vez de venir de la API de
+mercado), y abajo de la lista un divisor + pill "Market data ·
+external" + el pie de nota de dos líneas. CSS nuevo: `.aw-badge-text` /
+`.aw-editorial-tag` / `.aw-panel-divider` / `.aw-panel-footnote`.
 
 ## Arquitectura: endpoints propios y datos de mercado
 
