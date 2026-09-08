@@ -4,9 +4,9 @@ Plugin de WordPress para la entidad "Project" de AlphaWire. Plan completo
 (recap de docs + sitio + roadmap) en el artifact publicado en la
 conversación.
 
-## Estado: v0.7.9 — Fases 0-4 completas, más CSV import, auto-update desde
+## Estado: v0.8.0 — Fases 0-4 completas, más CSV import, auto-update desde
 ## GitHub, y un rediseño del Directory/Trending a paridad con el prototipo
-## de Lovable (incluye Collections, fuera del plan original)
+## de Lovable
 
 ### Fase 0 (v0.1.0)
 - CPT `project`, URL permanente `/projects/{slug}/`, archivo en `/projects/`.
@@ -149,20 +149,17 @@ importar a cuántos Projects esté etiquetado. Top Categories queda igual —
 `pillar` no tiene ese problema.
 
 ### v0.7.0 — Paridad de layout con el prototipo de Lovable + Collections
+### (removido en v0.8.0, ver más abajo)
 
 El Directory (`/projects/`) se rediseñó para acercarse al prototipo de
-Lovable: sidebar izquierdo (nav Explore + Categories + CTA de
-Collections), buscador movido al header, strip numerado de Trending
-Projects con volumen 24h real de CoinGecko, y un panel de Top
-Categories/Trending Narratives con el % de cambio promedio real (no
-mockeado). Se sumó además **Collections** — favoritos con nombre propio,
-múltiples por usuario — que el plan original excluía explícitamente de la
-Fase 3 pero se agregó a pedido, sobre el sistema de login ya existente del
-sitio (Thirdweb Auth SSO ya crea/mapea un usuario real de WP; no hizo
-falta autenticación nueva). Cada tarjeta tiene una estrella, hay una
-página "My Collections" en `/projects/collections/`, todo vía user-meta +
-un pequeño surface REST autenticado — sin tablas nuevas en la base de
-datos. Ver `includes/class-collections.php`.
+Lovable: sidebar izquierdo (nav Explore + Categories), buscador movido al
+header, strip numerado de Trending Projects con volumen 24h real de
+CoinGecko, y un panel de Top Categories/Trending Narratives con el % de
+cambio promedio real (no mockeado). También se sumó en esta versión
+**Collections** — favoritos con nombre propio, múltiples por usuario —
+que el plan original excluía explícitamente de la Fase 3 pero se agregó a
+pedido en su momento. Producto decidió en v0.8.0 que no se iba a usar y
+se eliminó por completo (ver esa sección).
 
 ### v0.7.1 – v0.7.7 — Pulido visual del Directory/Trending, a pura CSS/JS
 
@@ -202,6 +199,20 @@ datos reales, no en el diseño estático:
   Recently Launched/Updated muestran el logo o inicial de cada Project al
   lado del nombre, igual que el grid y el Trending strip.
 
+### v0.8.0 — Se eliminó el feature de Collections
+
+Decisión de producto: Collections (favoritos con nombre propio,
+múltiples por usuario, ver v0.7.0 más arriba) no se va a usar. Como la
+estrella de "guardar" en cada tarjeta no tenía otro propósito que "guardar
+en una colección", se eliminó junto con Collections — no queda ningún
+favorito/bookmark suelto en su lugar. Se borraron
+`includes/class-collections.php` y `templates/collections.php`, la ruta
+`/projects/collections/` y su query var `aw_projects_view`
+(`REWRITE_VERSION` subió a 7 para que el sitio en vivo limpie la regla
+vieja de la opción `rewrite_rules` en el próximo request), el modal y la
+estrella en las tarjetas/Directory/Project Profile, el endpoint REST de
+Collections, y todo el CSS/JS asociado.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace
@@ -213,8 +224,6 @@ consume estos:
 - `GET /projects`, `/projects/trending`, `/projects/recently-launched`,
   `/projects/recently-updated`, `/projects/editors-picks`, `/categories`,
   `/narratives` — endpoints de Directory (`class-directory-rest-api.php`).
-- `GET/POST/DELETE /collections...` — Collections del usuario logueado
-  (`class-collections.php`).
 
 **Orden de registro importa** (v0.7.9): WordPress matchea rutas REST en el
 orden en que se registraron y se queda con la primera que matchea. El
