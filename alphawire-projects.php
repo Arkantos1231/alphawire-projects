@@ -2,9 +2,29 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.5
+ * Version: 0.8.6
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.6 — Adds a JSON-LD structured-data block per Project (ticker,
+ * price, market cap, 24h volume/change, launch date, external links as
+ * sameAs) on top of whatever Rank Math already outputs for this CPT.
+ * Rank Math (already active site-wide) covers SEO title/meta description/
+ * canonical/Open Graph/sitemap for `project` for free once that CPT is
+ * enabled in its own settings — nothing here duplicates that. What it
+ * doesn't do, in Free or Pro, is a "crypto/financial asset" schema type,
+ * and its own docs say ACF fields don't reliably map into its Schema
+ * Generator — its documented fix for exactly this is a plugin-side filter
+ * on `rank_math/json_ld`, which is what includes/class-schema.php adds.
+ * Deliberately modeled as Organization + PropertyValue rather than
+ * Product/Offer: Product schema asserts a purchasable listing on the page
+ * (price + availability + an implied checkout) which isn't true here and
+ * Search Console flags as invalid — Organization + PropertyValue states
+ * the same facts without that claim. Reuses
+ * AlphaWire_Projects_REST::build_payload() so this can't drift from what
+ * the page itself shows. No-op with no visible effect if Rank Math (or
+ * its Schema module) isn't active — it just adds a filter that never
+ * fires.
  *
  * v0.8.5 — Restyled the header's "Key Stats" panel to match the
  * reference pixel-for-pixel: dropped the sparkline chart (that stays
@@ -334,7 +354,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.5' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.6' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -346,6 +366,7 @@ require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-activity.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-market-data-service.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-rest-api.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-directory-rest-api.php';
+require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-schema.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-settings.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-ai-summary-service.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-ai-summary-metabox.php';
@@ -401,6 +422,7 @@ final class AlphaWire_Projects {
 		AlphaWire_Projects_Templates::hooks();
 		AlphaWire_Projects_CSV_Importer::hooks();
 		AlphaWire_Projects_Updater::hooks();
+		AlphaWire_Projects_Schema::hooks();
 	}
 }
 
