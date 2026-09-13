@@ -2,9 +2,23 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.6
+ * Version: 0.8.7
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.7 — Fixed the Directory search (the header search bar / MVP search
+ * by name/ticker/category/narrative) throwing PHP warnings and returning
+ * no category/narrative matches whenever the typed term matched a pillar
+ * or topic term name. Root cause: class-directory-rest-api.php's search()
+ * passed `'taxonomy' => array( 'pillar', 'topic' )` inside a single
+ * tax_query clause — get_terms() does accept an array of taxonomies there,
+ * but WP_Tax_Query wants exactly one taxonomy per clause, so the array
+ * broke its internals instead (see the Query Monitor trace: the failure
+ * sat inside class-wp-tax-query.php, reached via this search() call).
+ * Replaced with two single-taxonomy clauses ('pillar', 'topic') joined by
+ * `'relation' => 'OR'` — same matching intent, valid input. Also added an
+ * `is_wp_error( $term_ids )` guard before building that tax_query, missing
+ * here even though the same file's term_usage() already does this check.
  *
  * v0.8.6 — Adds a JSON-LD structured-data block per Project (ticker,
  * price, market cap, 24h volume/change, launch date, external links as
@@ -354,7 +368,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.6' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.7' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
