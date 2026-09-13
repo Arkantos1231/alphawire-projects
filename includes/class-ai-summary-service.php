@@ -120,10 +120,16 @@ class AlphaWire_Projects_AI_Summary_Service {
 				),
 				'body'    => wp_json_encode(
 					array(
-						'model'       => AlphaWire_Projects_Settings::get_model(),
-						'temperature' => 0.4,
-						'max_tokens'  => 220,
-						'messages'    => array(
+						'model'                 => AlphaWire_Projects_Settings::get_model(),
+						'temperature'           => 0.4,
+						// OpenAI retired `max_tokens` on newer models in favour
+						// of `max_completion_tokens` (confirmed live via the
+						// API's own error: "Unsupported parameter: 'max_tokens'
+						// is not supported with this model. Use
+						// 'max_completion_tokens' instead.") — same token cap,
+						// new parameter name.
+						'max_completion_tokens' => 220,
+						'messages'              => array(
 							array(
 								'role'    => 'system',
 								'content' => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language.',

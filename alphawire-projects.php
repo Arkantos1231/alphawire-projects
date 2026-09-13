@@ -2,9 +2,17 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.8
+ * Version: 0.8.9
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.9 — With v0.8.8's error now visible in wp-admin, the very next
+ * attempt surfaced the real cause of every failed "Generate / refresh
+ * draft": OpenAI's own API error, "Unsupported parameter: 'max_tokens' is
+ * not supported with this model. Use 'max_completion_tokens' instead."
+ * OpenAI retired `max_tokens` on newer models. Swapped the AI Summary
+ * request body to `max_completion_tokens` (same 220-token cap, new
+ * parameter name). Nothing else about the request changed.
  *
  * v0.8.8 — "Generate / refresh draft" failing always showed the same
  * generic "Could not generate a draft — check Projects → Settings and the
@@ -379,7 +387,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.8' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.9' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
