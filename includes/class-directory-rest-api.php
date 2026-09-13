@@ -332,7 +332,7 @@ class AlphaWire_Projects_Directory_REST {
 	 * Lightweight shape for list/card contexts — full detail (timeline,
 	 * coverage, AI summary…) only lives on the single-project endpoint.
 	 */
-	private static function card( $post ) {
+	public static function card( $post ) {
 		$coingecko_id = function_exists( 'get_field' ) ? get_field( 'coingecko_id', $post->ID ) : get_post_meta( $post->ID, 'coingecko_id', true );
 		$market       = AlphaWire_Projects_Market_Data_Service::instance()->get_cached_market_data( $coingecko_id );
 

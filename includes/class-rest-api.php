@@ -118,11 +118,7 @@ class AlphaWire_Projects_REST {
 			if ( ! $related_post ) {
 				continue;
 			}
-			$out[] = array(
-				'id'   => $related_post->ID,
-				'slug' => $related_post->post_name,
-				'name' => get_the_title( $related_post ),
-			);
+			$out[] = AlphaWire_Projects_Directory_REST::card( $related_post );
 		}
 		return $out;
 	}

@@ -439,23 +439,18 @@ while ( have_posts() ) :
 			</div>
 
 			<div class="aw-profile-tab-panel" id="aw-panel-related" role="tabpanel" aria-labelledby="aw-tab-related" data-aw-profile-panel="related" hidden>
-			<?php if ( ! empty( $project['relatedProjects'] ) ) : ?>
-				<section class="aw-section">
-				<div class="aw-section-header">
-					<h2>Related Projects</h2>
-				</div>
-				<div class="aw-related-grid">
-					<?php foreach ( $project['relatedProjects'] as $related ) : ?>
-						<a class="aw-panel-hover aw-card" href="<?php echo esc_url( get_permalink( $related['id'] ) ); ?>">
-							<?php aw_projects_logo( array( 'ticker' => '', 'name' => $related['name'], 'logo' => get_the_post_thumbnail_url( $related['id'], 'thumbnail' ) ), 38 ); ?>
-							<span class="aw-card-body">
-								<span class="aw-name"><?php echo esc_html( $related['name'] ); ?></span>
-							</span>
-						</a>
-					<?php endforeach; ?>
-				</div>
-				</section>
-			<?php endif; ?>
+				<?php if ( ! empty( $project['relatedProjects'] ) ) : ?>
+					<section class="aw-section">
+						<div class="aw-section-header">
+							<h2>Related Projects</h2>
+						</div>
+						<div class="aw-grid">
+							<?php foreach ( $project['relatedProjects'] as $card ) : ?>
+								<?php aw_projects_render_card( $card ); ?>
+							<?php endforeach; ?>
+						</div>
+					</section>
+				<?php endif; ?>
 			</div>
 		</div>
 
