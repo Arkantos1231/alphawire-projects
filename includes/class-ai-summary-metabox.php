@@ -46,6 +46,16 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 			printf( '<p>%s %s</p>', esc_html__( 'Last updated:', 'alphawire-projects' ), esc_html( $updated ) );
 		}
 
+		$last_error = get_option( 'aw_ai_summary_last_error_' . $post->ID );
+		if ( ! empty( $last_error['message'] ) ) {
+			printf(
+				'<p class="description" style="color:#b32d2e;"><strong>%s</strong> %s%s</p>',
+				esc_html__( 'Last error:', 'alphawire-projects' ),
+				esc_html( $last_error['message'] ),
+				! empty( $last_error['when'] ) ? ' (' . esc_html( $last_error['when'] ) . ')' : ''
+			);
+		}
+
 		// A meta box renders INSIDE WordPress's own #post edit form — a
 		// second, nested <form> here is invalid HTML, and browsers respond
 		// to invalid nesting by folding this form's fields into the outer
@@ -86,7 +96,10 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 		if ( 'success' === $_GET['aw_summary'] ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'AI summary draft generated — review it below before approving.', 'alphawire-projects' ) . '</p></div>';
 		} else {
-			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not generate a draft — check Projects → Settings and the PHP error log.', 'alphawire-projects' ) . '</p></div>';
+			$project_id = isset( $_GET['post'] ) ? (int) $_GET['post'] : 0;
+			$last_error = $project_id ? get_option( 'aw_ai_summary_last_error_' . $project_id ) : null;
+			$detail     = ! empty( $last_error['message'] ) ? ' ' . esc_html( $last_error['message'] ) : '';
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Could not generate a draft.', 'alphawire-projects' ) . $detail . '</p></div>';
 		}
 	}
 }

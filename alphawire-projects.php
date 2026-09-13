@@ -2,9 +2,20 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.7
+ * Version: 0.8.8
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.8.8 — "Generate / refresh draft" failing always showed the same
+ * generic "Could not generate a draft — check Projects → Settings and the
+ * PHP error log" notice, with the real reason (invalid/missing API key,
+ * insufficient source content, an OpenAI API error, a network/HTTP
+ * failure) only reachable via the server's PHP error log — not something
+ * most editors can get to. generate_draft()'s failure paths now also save
+ * the exact message as a per-Project option (cleared on the next success),
+ * shown both in the redirect notice and as a persistent "Last error" line
+ * in the AI Summary — Generate meta box, so the real cause is visible in
+ * wp-admin without server access. No behavior change to generation itself.
  *
  * v0.8.7 — Fixed the Directory search (the header search bar / MVP search
  * by name/ticker/category/narrative) throwing PHP warnings and returning
@@ -368,7 +379,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.7' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.8' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

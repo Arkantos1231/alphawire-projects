@@ -164,6 +164,8 @@ class AlphaWire_Projects_AI_Summary_Service {
 			update_post_meta( $project_id, 'ai_summary_updated', current_time( 'mysql' ) );
 		}
 
+		delete_option( 'aw_ai_summary_last_error_' . $project_id );
+
 		return true;
 	}
 
@@ -226,7 +228,23 @@ class AlphaWire_Projects_AI_Summary_Service {
 		return implode( "\n", $lines );
 	}
 
+	/**
+	 * Logs to the PHP error log (as before) AND stores the message as a
+	 * per-Project option, so an editor can see WHY generation failed
+	 * directly in wp-admin (class-ai-summary-metabox.php) without needing
+	 * server/FTP access to read the error log — most editors won't have
+	 * that, and "check the PHP error log" was a dead end for them.
+	 * Overwritten by the next attempt; cleared on the next success.
+	 */
 	private function log_failure( $project_id, $message ) {
 		error_log( sprintf( '[AlphaWire Projects] OpenAI summary generation failed for Project #%d: %s', $project_id, $message ) );
+		update_option(
+			'aw_ai_summary_last_error_' . $project_id,
+			array(
+				'message' => (string) $message,
+				'when'    => current_time( 'mysql' ),
+			),
+			false
+		);
 	}
 }
