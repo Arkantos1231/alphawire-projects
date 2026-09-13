@@ -158,14 +158,25 @@ class AlphaWire_Projects_Directory_REST {
 		) );
 
 		$by_taxonomy = array();
-		if ( ! empty( $term_ids ) ) {
+		if ( ! empty( $term_ids ) && ! is_wp_error( $term_ids ) ) {
+			// WP_Tax_Query wants ONE taxonomy per clause (unlike get_terms()
+			// above, which does accept an array) — passing an array here
+			// silently breaks tax_query internals. Two single-taxonomy
+			// clauses joined by OR match the same intent: a Project tagged
+			// with any of these term IDs in either pillar or topic.
 			$by_taxonomy = get_posts( array(
 				'post_type'      => AlphaWire_Projects_Post_Type::POST_TYPE,
 				'post_status'    => 'publish',
 				'posts_per_page' => 20,
 				'tax_query'      => array(
+					'relation' => 'OR',
 					array(
-						'taxonomy' => array( 'pillar', 'topic' ),
+						'taxonomy' => 'pillar',
+						'field'    => 'term_id',
+						'terms'    => $term_ids,
+					),
+					array(
+						'taxonomy' => 'topic',
 						'field'    => 'term_id',
 						'terms'    => $term_ids,
 					),
