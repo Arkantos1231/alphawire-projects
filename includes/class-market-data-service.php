@@ -76,16 +76,19 @@ class AlphaWire_Projects_Market_Data_Service {
 			)
 		);
 
-		foreach ( $project_ids as $project_id ) {
+		$project_count = count( $project_ids );
+		$spacing_us    = $this->get_refresh_spacing_us();
+
+		foreach ( $project_ids as $index => $project_id ) {
 			$coingecko_id = $this->get_coingecko_id( $project_id );
 			if ( empty( $coingecko_id ) ) {
 				continue;
 			}
 			$this->fetch_and_cache( $coingecko_id );
-			// The free tier's rate limit is low (5-15 req/min) — a short
-			// pause between requests keeps a bigger catalogue from tripping
-			// it mid-run rather than just spacing runs 15 min apart.
-			usleep( 300000 );
+
+			if ( $project_count > 1 && $index < $project_count - 1 ) {
+				usleep( $spacing_us );
+			}
 		}
 	}
 
@@ -130,6 +133,11 @@ class AlphaWire_Projects_Market_Data_Service {
 	}
 
 	private function fetch_and_cache( $coingecko_id ) {
+		$base_url = defined( 'AW_COINGECKO_API_KEY' ) && AW_COINGECKO_API_KEY
+			? 'https://pro-api.coingecko.com/api/v3/coins/'
+			: 'https://api.coingecko.com/api/v3/coins/';
+		$base_url = apply_filters( 'alphawire_projects_coingecko_base_url', $base_url );
+
 		$url = add_query_arg(
 			array(
 				'localization'   => 'false',
@@ -139,10 +147,19 @@ class AlphaWire_Projects_Market_Data_Service {
 				'developer_data' => 'false',
 				'sparkline'      => 'true',
 			),
-			'https://api.coingecko.com/api/v3/coins/' . rawurlencode( $coingecko_id )
+			$base_url . rawurlencode( $coingecko_id )
 		);
 
-		$args = array( 'timeout' => 8 );
+		$args = array( 'timeout' => 15 );
+
+		if ( defined( 'AW_COINGECKO_API_KEY' ) && AW_COINGECKO_API_KEY ) {
+			$args['headers'] = array_merge(
+				$args['headers'] ?? array(),
+				array(
+					'x-cg-pro-api-key' => AW_COINGECKO_API_KEY,
+				)
+			);
+		}
 
 		/**
 		 * Add auth once a CoinGecko Demo/paid key exists, e.g.:
@@ -156,10 +173,8 @@ class AlphaWire_Projects_Market_Data_Service {
 		 */
 		$args = apply_filters( 'alphawire_projects_coingecko_request_args', $args );
 
-		$response = wp_remote_get( $url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			$this->log_failure( $coingecko_id, $response->get_error_message() );
+		$response = $this->remote_get_with_retry( $coingecko_id, $url, $args );
+		if ( null === $response ) {
 			return null;
 		}
 
@@ -239,6 +254,52 @@ class AlphaWire_Projects_Market_Data_Service {
 		// v0.1: error_log is enough to see this is wired up correctly.
 		// The site already runs Simple History — route failures there next.
 		error_log( sprintf( '[AlphaWire Projects] CoinGecko fetch failed for "%s": %s', $coingecko_id, $message ) );
+	}
+
+	private function get_refresh_spacing_us() {
+		$requests_per_minute = (int) apply_filters( 'alphawire_projects_coingecko_rate_limit_per_minute', 500 );
+		$safety_factor       = (float) apply_filters( 'alphawire_projects_coingecko_safe_rate_factor', 0.6 );
+		$target_rate         = max( 1, (int) round( $requests_per_minute * $safety_factor ) );
+
+		return (int) round( ( 60 * 1000000 ) / $target_rate );
+	}
+
+	private function remote_get_with_retry( $coingecko_id, $url, $args ) {
+		$max_retries = (int) apply_filters( 'alphawire_projects_coingecko_max_retries', 3 );
+		$base_delay  = (int) apply_filters( 'alphawire_projects_coingecko_retry_delay_us', 500000 );
+
+		for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
+			$response = wp_remote_get( $url, $args );
+
+			if ( ! is_wp_error( $response ) ) {
+				$code = wp_remote_retrieve_response_code( $response );
+				if ( 200 === $code ) {
+					return $response;
+				}
+
+				if ( in_array( $code, array( 429, 500, 502, 503, 504 ), true ) && $attempt < $max_retries ) {
+					$delay = $base_delay * ( 2 ** ( $attempt - 1 ) );
+					$this->log_failure( $coingecko_id, sprintf( 'HTTP %d; retrying in %d ms', $code, round( $delay / 1000 ) ) );
+					usleep( $delay );
+					continue;
+				}
+
+				$this->log_failure( $coingecko_id, 'HTTP ' . $code . ( 429 === $code ? ' (rate limited)' : '' ) );
+				return null;
+			}
+
+			if ( $attempt < $max_retries ) {
+				$delay = $base_delay * ( 2 ** ( $attempt - 1 ) );
+				$this->log_failure( $coingecko_id, sprintf( '%s; retrying in %d ms', $response->get_error_message(), round( $delay / 1000 ) ) );
+				usleep( $delay );
+				continue;
+			}
+
+			$this->log_failure( $coingecko_id, $response->get_error_message() );
+			return null;
+		}
+
+		return null;
 	}
 
 	/**
