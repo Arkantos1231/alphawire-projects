@@ -1240,3 +1240,132 @@
 	gap: 10px;
 	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
+
+/* Smart Money Leaderboard (/smart-money/) — Nansen integration, Phase 1.
+   No new sidebar (unlike the Directory), so the main column takes the
+   full page width. .aw-filters above already styles this page's form
+   (select, button, .aw-hint) — this block only adds what's specific to a
+   ranked table layout: number inputs (the existing rule only covers
+   type="text"), the row grid, and the two Smart Money-only value types
+   (net flow badge, "stale" tag). */
+
+.aw-full-width {
+	width: 100%;
+}
+
+.aw-filters label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--aw-muted);
+}
+
+.aw-filters input[type="number"] {
+	background: var(--aw-surface);
+	border: 1px solid var(--aw-border);
+	color: var(--aw-text);
+	border-radius: var(--aw-radius);
+	padding: 9px 12px;
+	font-size: 13px;
+	width: 140px;
+}
+
+.aw-smart-money-table {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.aw-smart-money-row {
+	display: grid;
+	grid-template-columns: 32px 2fr 0.9fr 0.9fr 0.8fr 1fr 1.2fr 0.9fr;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	text-decoration: none;
+	color: var(--aw-text);
+}
+
+.aw-smart-money-head {
+	padding: 0 14px 6px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--aw-muted);
+	border: none;
+	background: none;
+}
+
+.aw-sm-rank {
+	color: var(--aw-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.aw-sm-project {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.aw-sm-project-name {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+.aw-sm-chain,
+.aw-sm-price,
+.aw-sm-cap,
+.aw-sm-holders {
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	color: var(--aw-muted);
+}
+
+.aw-sm-flow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-variant-numeric: tabular-nums;
+}
+
+.aw-sm-stale {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	border: 1px solid var(--aw-border);
+	border-radius: 3px;
+	padding: 1px 5px;
+}
+
+.aw-sm-blurb {
+	margin: -2px 0 6px 56px;
+	font-size: 12px;
+	color: var(--aw-muted);
+	max-width: 640px;
+}
+
+@media (max-width: 900px) {
+	.aw-smart-money-row {
+		grid-template-columns: 24px 2fr 1fr 1fr;
+	}
+
+	.aw-sm-cap,
+	.aw-sm-holders,
+	.aw-sm-chain {
+		display: none;
+	}
+
+	.aw-smart-money-head .aw-sm-cap,
+	.aw-smart-money-head .aw-sm-holders,
+	.aw-smart-money-head .aw-sm-chain {
+		display: none;
+	}
+}

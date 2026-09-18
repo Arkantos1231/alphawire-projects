@@ -21,6 +21,14 @@ class AlphaWire_Projects_Settings {
 	const OPTION_NARRATIVE_EXCLUSIONS   = 'alphawire_projects_narrative_exclusions';
 	const DEFAULT_NARRATIVE_EXCLUSIONS  = "Tether\nCircle\nRipple\nPolymarket\nKalshi";
 
+	// Nansen — Smart Money Leaderboard (Intelligence proposal, Phase 1).
+	// Same "no key yet, build the structure anyway" situation CoinGecko was
+	// in before AW_COINGECKO_API_KEY existed: the sync service and this
+	// field are ready now; nothing else needs to change once a key is added
+	// here — class-smart-money-service.php just starts getting real data
+	// back instead of an auth error on its next hourly run.
+	const OPTION_NANSEN_API_KEY = 'alphawire_projects_nansen_api_key';
+
 	public static function hooks() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
@@ -154,6 +162,33 @@ class AlphaWire_Projects_Settings {
 			'alphawire-projects-settings',
 			'alphawire_projects_narratives_section'
 		);
+
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_NANSEN_API_KEY,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_nansen_api_key' ),
+				'default'           => '',
+			)
+		);
+
+		add_settings_section(
+			'alphawire_projects_nansen_section',
+			'Nansen — Smart Money Leaderboard',
+			function () {
+				echo '<p>' . esc_html__( 'Powers the Smart Money Leaderboard only. Synced once an hour in the background (Projects with a Chain + Token Address set below the fold on their edit screen) — never called while a visitor is browsing the site. Leave blank and the Leaderboard page still works, just empty, until a key is added.', 'alphawire-projects' ) . '</p>';
+			},
+			'alphawire-projects-settings'
+		);
+
+		add_settings_field(
+			self::OPTION_NANSEN_API_KEY,
+			'Nansen API key',
+			array( __CLASS__, 'render_nansen_api_key_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_nansen_section'
+		);
 	}
 
 	/**
@@ -181,6 +216,38 @@ class AlphaWire_Projects_Settings {
 			autocomplete="off"
 			class="regular-text"
 			placeholder="sk-..."
+		/>
+		<p class="description">
+			<?php echo esc_html( $masked ); ?> — leave this field blank to keep the current key.
+			Stored server-side only; no REST endpoint or front-end page ever returns it.
+		</p>
+		<?php
+	}
+
+	/**
+	 * Same blank-means-unchanged rule as sanitize_api_key() — see that
+	 * method's docblock. Kept as a separate method (rather than a shared
+	 * helper) so each key's sanitizer is grep-able by its own option name.
+	 */
+	public static function sanitize_nansen_api_key( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return get_option( self::OPTION_NANSEN_API_KEY, '' );
+		}
+		return $value;
+	}
+
+	public static function render_nansen_api_key_field() {
+		$existing = get_option( self::OPTION_NANSEN_API_KEY, '' );
+		$masked   = $existing ? ( 'Saved — ends in ' . substr( $existing, -4 ) ) : 'Not set yet';
+		?>
+		<input
+			type="password"
+			name="<?php echo esc_attr( self::OPTION_NANSEN_API_KEY ); ?>"
+			value=""
+			autocomplete="off"
+			class="regular-text"
+			placeholder="Nansen API key"
 		/>
 		<p class="description">
 			<?php echo esc_html( $masked ); ?> — leave this field blank to keep the current key.
@@ -279,6 +346,10 @@ class AlphaWire_Projects_Settings {
 
 	public static function get_api_key() {
 		return get_option( self::OPTION_API_KEY, '' );
+	}
+
+	public static function get_nansen_api_key() {
+		return get_option( self::OPTION_NANSEN_API_KEY, '' );
 	}
 
 	public static function get_model() {

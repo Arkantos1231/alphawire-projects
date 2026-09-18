@@ -22,6 +22,12 @@ class AlphaWire_Projects_Templates {
 	public static function hooks() {
 		add_filter( 'single_template', array( __CLASS__, 'single_project_template' ) );
 		add_filter( 'archive_template', array( __CLASS__, 'archive_project_template' ) );
+		// Smart Money Leaderboard (Nansen integration, Phase 1) is a
+		// standalone page behind the /smart-money/ rewrite
+		// (class-post-type.php), not a Project archive or singular — so it
+		// hooks the more general template_include rather than
+		// single_template/archive_template above.
+		add_filter( 'template_include', array( __CLASS__, 'smart_money_leaderboard_template' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -45,9 +51,20 @@ class AlphaWire_Projects_Templates {
 		return $template;
 	}
 
+	public static function smart_money_leaderboard_template( $template ) {
+		if ( '1' === get_query_var( 'aw_smart_money' ) ) {
+			$custom = ALPHAWIRE_PROJECTS_PATH . 'templates/smart-money-leaderboard.php';
+			if ( file_exists( $custom ) ) {
+				return $custom;
+			}
+		}
+		return $template;
+	}
+
 	public static function enqueue_assets() {
 		$is_plugin_page = is_singular( AlphaWire_Projects_Post_Type::POST_TYPE )
-			|| is_post_type_archive( AlphaWire_Projects_Post_Type::POST_TYPE );
+			|| is_post_type_archive( AlphaWire_Projects_Post_Type::POST_TYPE )
+			|| '1' === get_query_var( 'aw_smart_money' );
 
 		if ( ! $is_plugin_page ) {
 			return;

@@ -2,9 +2,51 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.8.9
+ * Version: 0.9.0
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.0 — Smart Money Leaderboard: Phase 1 of the AlphaWire × Nansen
+ * Integration Proposal (the other two phases — Alpha Intelligence and
+ * AlphaClub — are explicitly out of scope for now, per product's decision).
+ * A new /smart-money/ page ranks Projects by Smart Money 24h net inflow
+ * (not price), filterable by chain/category/narrative/market cap, and links
+ * every row back to its existing Project page. Built the whole pipeline
+ * even though there's no Nansen API key yet — same "structure ready, data
+ * fills in once a key is added" approach already used for CoinGecko before
+ * a paid key existed:
+ *   - Projects → Settings gets a new Nansen API key field (same masked/
+ *     "Saved — ends in XXXX" pattern as the OpenAI key)
+ *   - Two new Project fields (Nansen chain, Nansen token address) — a
+ *     Project without both is simply left off the Leaderboard, the same
+ *     graceful-skip rule already used for an unmapped CoinGecko ID
+ *   - class-smart-money-service.php: the only class that talks to Nansen.
+ *     Hourly background sync only — CACHE-ONLY reads, with no live-fallback
+ *     path at all (stricter than Market_Data_Service, which does fall back
+ *     to a short-timeout live CoinGecko call on a cold cache). The proposal
+ *     is explicit that AlphaWire must never make a live Nansen call, full
+ *     stop, so a cold cache here just means empty until the next sync runs.
+ *     Also generates a short optional OpenAI blurb per Project explaining
+ *     the movement (reuses the existing OpenAI settings; a missing OpenAI
+ *     key just skips the blurb, it doesn't fail the sync)
+ *   - class-smart-money-rest-api.php: /smart-money-leaderboard REST route +
+ *     a query_leaderboard() helper the template calls directly, same
+ *     no-loopback-HTTP-call pattern as Directory REST's query_projects()
+ *   - class-market-data-service.php: added marketCapRaw (a plain float
+ *     alongside the existing formatted marketCap string) so the Leaderboard
+ *     can filter/sort by market cap — mirrors the existing volume24hRaw
+ *   - class-post-type.php: new defensively-registered /smart-money/
+ *     rewrite (REWRITE_VERSION 7 → 8), reusing the exact PHP_INT_MAX
+ *     prepend + self-healing flush pattern already proven for /projects/
+ *   - templates/smart-money-leaderboard.php: new page, server-rendered
+ *     (no client-side fetch loop), styled consistently with
+ *     archive-project.php and reusing its aw_projects_logo()/
+ *     aw_projects_change()/aw_projects_compact_number() helpers
+ * Several Nansen response field names are flagged BEST-EFFORT rather than
+ * CONFIRMED in class-smart-money-service.php's normalise() — Nansen doesn't
+ * publish a full OpenAPI spec, so these should be checked against a real
+ * response as soon as a key is added, before this is trusted beyond the
+ * Leaderboard's simple net-flow sort.
  *
  * v0.8.9 — With v0.8.8's error now visible in wp-admin, the very next
  * attempt surfaced the real cause of every failed "Generate / refresh
@@ -387,7 +429,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.8.9' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.0' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -397,8 +439,10 @@ require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-fields.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-content-relationships.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-activity.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-market-data-service.php';
+require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-smart-money-service.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-rest-api.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-directory-rest-api.php';
+require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-smart-money-rest-api.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-schema.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-settings.php';
 require_once ALPHAWIRE_PROJECTS_PATH . 'includes/class-ai-summary-service.php';
@@ -443,10 +487,18 @@ final class AlphaWire_Projects {
 		// routes MUST be registered first, or they get shadowed by the
 		// single-project endpoint and 404 with "Project not found".
 		add_action( 'rest_api_init', array( 'AlphaWire_Projects_Directory_REST', 'register_routes' ), 5 );
+		// /smart-money-leaderboard is its own literal path, not a Project
+		// slug — it can't collide with the single-project catch-all the way
+		// Directory REST's routes could — but it's registered at the same
+		// priority 5 anyway, alongside every other specific route, purely
+		// so this stays the one place to look for "is this before the
+		// catch-all".
+		add_action( 'rest_api_init', array( 'AlphaWire_Projects_Smart_Money_REST', 'register_routes' ), 5 );
 		add_action( 'rest_api_init', array( 'AlphaWire_Projects_REST', 'register_routes' ), 20 );
 
 		AlphaWire_Projects_Activity::hooks();
 		AlphaWire_Projects_Market_Data_Service::instance()->hooks();
+		AlphaWire_Projects_Smart_Money_Service::instance()->hooks();
 
 		AlphaWire_Projects_Settings::hooks();
 		AlphaWire_Projects_AI_Summary_Metabox::hooks();

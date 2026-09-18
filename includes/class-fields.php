@@ -50,6 +50,42 @@ class AlphaWire_Projects_Fields {
 						'type'         => 'text',
 						'instructions' => 'The slug CoinGecko uses for this asset (e.g. "hyperliquid"). Leave empty if not mapped yet — Key Stats will just show as unavailable rather than break.',
 					),
+					// Nansen — Smart Money Leaderboard (Intelligence proposal, Phase 1).
+					// Same "graceful if unmapped" pattern as coingecko_id above: both of
+					// these are optional, and class-smart-money-service.php just skips a
+					// Project during its hourly sync when either is empty rather than
+					// erroring. This select isn't the full ~37-chain list Nansen supports
+					// (their docs don't publish one exhaustive list) — it covers the
+					// chains AlphaWire actually lists Projects on today; add a chain here
+					// the moment a Project needs one that's missing.
+					array(
+						'key'           => 'field_aw_nansen_chain',
+						'label'         => 'Nansen chain',
+						'name'          => 'nansen_chain',
+						'type'          => 'select',
+						'choices'       => array(
+							''          => '— Not mapped —',
+							'ethereum'  => 'Ethereum',
+							'solana'    => 'Solana',
+							'bnb'       => 'BNB Chain',
+							'polygon'   => 'Polygon',
+							'arbitrum'  => 'Arbitrum',
+							'optimism'  => 'Optimism',
+							'base'      => 'Base',
+							'avalanche' => 'Avalanche',
+							'tron'      => 'Tron',
+						),
+						'default_value' => '',
+						'allow_null'    => 1,
+						'instructions'  => 'The chain Nansen tracks this token\'s Smart Money activity on. Leave empty if not mapped yet — the Leaderboard just skips this project rather than break. Needs Token address (below) too.',
+					),
+					array(
+						'key'          => 'field_aw_nansen_token_address',
+						'label'        => 'Nansen token address',
+						'name'         => 'nansen_token_address',
+						'type'         => 'text',
+						'instructions' => 'The token\'s contract address on the chain selected above (0x... for EVM chains, base58 for Solana). Both this and Nansen chain must be set for this Project to appear on the Smart Money Leaderboard.',
+					),
 					array(
 						'key'        => 'field_aw_links',
 						'label'      => 'External links',

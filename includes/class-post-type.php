@@ -9,7 +9,7 @@ class AlphaWire_Projects_Post_Type {
 
 	// Bump this whenever register_top_priority_rewrites() changes shape —
 	// it drives the one-time self-healing flush in maybe_flush_rewrite_rules().
-	const REWRITE_VERSION = 7;
+	const REWRITE_VERSION = 8;
 
 	public static function register() {
 		register_post_type(
@@ -78,6 +78,17 @@ class AlphaWire_Projects_Post_Type {
 	public static function register_top_priority_rewrites() {
 		add_action( 'generate_rewrite_rules', array( __CLASS__, 'prepend_rewrite_rules' ), PHP_INT_MAX );
 		add_filter( 'rewrite_rules_array', array( __CLASS__, 'prepend_to_rules_array' ), PHP_INT_MAX );
+		add_filter( 'query_vars', array( __CLASS__, 'register_query_vars' ) );
+	}
+
+	/**
+	 * `aw_smart_money` backs the /smart-money/ rule added in top_rules()
+	 * below (Nansen integration, Phase 1) — WordPress silently drops any
+	 * query var index.php?... points at that isn't allow-listed here first.
+	 */
+	public static function register_query_vars( $vars ) {
+		$vars[] = 'aw_smart_money';
+		return $vars;
 	}
 
 	public static function prepend_rewrite_rules( $wp_rewrite ) {
@@ -90,8 +101,15 @@ class AlphaWire_Projects_Post_Type {
 
 	private static function top_rules() {
 		return array(
-			'^projects/([^/]+)/?$' => 'index.php?' . self::POST_TYPE . '=$matches[1]',
-			'^projects/?$'         => 'index.php?post_type=' . self::POST_TYPE,
+			'^projects/([^/]+)/?$'  => 'index.php?' . self::POST_TYPE . '=$matches[1]',
+			'^projects/?$'          => 'index.php?post_type=' . self::POST_TYPE,
+			// Smart Money Leaderboard (Nansen integration, Phase 1) — a
+			// standalone page, not a Project archive/single, so it needs
+			// its own rule rather than piggybacking on the ones above.
+			// Same PHP_INT_MAX prepend + self-healing flush this class
+			// already proved out for /projects/ against the site's
+			// competing News-page rewrite — see this class's docblock.
+			'^smart-money/?$'       => 'index.php?aw_smart_money=1',
 		);
 	}
 

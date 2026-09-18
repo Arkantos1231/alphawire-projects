@@ -219,6 +219,11 @@ class AlphaWire_Projects_Market_Data_Service {
 				? round( (float) $market_data['price_change_percentage_24h'], 2 )
 				: null,
 			'marketCap'         => $usd( $market_data['market_cap']['usd'] ?? null ),
+			// Raw number alongside the formatted string, same pattern as
+			// volume24hRaw below — needed so the Smart Money Leaderboard
+			// (Nansen integration, Phase 1) can filter/sort Projects by
+			// market cap without re-parsing a "$1,234.56" display string.
+			'marketCapRaw'      => isset( $market_data['market_cap']['usd'] ) ? (float) $market_data['market_cap']['usd'] : null,
 			'volume24h'         => $usd( $market_data['total_volume']['usd'] ?? null ),
 			'volume24hRaw'      => isset( $market_data['total_volume']['usd'] ) ? (float) $market_data['total_volume']['usd'] : null,
 			'circulatingSupply' => isset( $market_data['circulating_supply'] )
@@ -239,6 +244,7 @@ class AlphaWire_Projects_Market_Data_Service {
 			'price'             => null,
 			'change24h'         => null,
 			'marketCap'         => null,
+			'marketCapRaw'      => null,
 			'volume24h'         => null,
 			'volume24hRaw'      => null,
 			'circulatingSupply' => null,
