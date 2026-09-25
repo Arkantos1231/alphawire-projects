@@ -103,7 +103,7 @@ class AlphaWire_Projects_Smart_Money_Service {
 			// Courteous pacing — two calls per Project (netflow + holdings)
 			// is well within even Nansen's Free tier (15 req/sec, 300/min),
 			// but this keeps the sync a good API citizen, matching the
-			// pacing already used for CoinGecko and OpenAI elsewhere in
+			// pacing already used for CoinGecko and Claude elsewhere in
 			// this plugin.
 			if ( $count > 1 && $index < $count - 1 ) {
 				usleep( 250000 );
@@ -155,7 +155,7 @@ class AlphaWire_Projects_Smart_Money_Service {
 				'headers' => array(
 					// Nansen auth: a flat 'apikey' header (confirmed from
 					// their public docs) — not Bearer-token style like
-					// OpenAI/CoinGecko Pro.
+					// Claude/CoinGecko Pro.
 					'apikey'       => $api_key,
 					'Content-Type' => 'application/json',
 				),
@@ -221,10 +221,10 @@ class AlphaWire_Projects_Smart_Money_Service {
 	}
 
 	/**
-	 * Short OpenAI-written blurb explaining the Smart Money movement,
+	 * Short Claude-written blurb explaining the Smart Money movement,
 	 * generated once per background sync — never on render, same rule as
 	 * the AI Project Summary feature (class-ai-summary-service.php). Gated
-	 * on the OpenAI key already used for AI Summaries; a missing key just
+	 * on the Claude key already used for AI Summaries; a missing key just
 	 * skips the blurb rather than failing the whole Nansen sync, since the
 	 * Leaderboard's numbers and sort order don't depend on it.
 	 */
@@ -246,25 +246,21 @@ class AlphaWire_Projects_Smart_Money_Service {
 		);
 
 		$response = wp_remote_post(
-			'https://api.openai.com/v1/chat/completions',
+			'https://api.anthropic.com/v1/messages',
 			array(
 				'timeout' => 20,
 				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					'Authorization'     => 'Bearer ' . $api_key,
+					'anthropic-version' => '2023-06-01',
+					'Content-Type'      => 'application/json',
 				),
 				'body'    => wp_json_encode(
 					array(
-						'model'                 => AlphaWire_Projects_Settings::get_model(),
-						'temperature'           => 0.4,
-						// Same OpenAI parameter fix as class-ai-summary-service.php
-						// (v0.8.9) — 'max_tokens' is rejected on newer models.
-						'max_completion_tokens' => 60,
-						'messages'              => array(
-							array(
-								'role'    => 'system',
-								'content' => 'You write single-sentence, factual Smart Money activity summaries for AlphaWire. Use ONLY the numbers given to you — never invent facts.',
-							),
+						'model'       => AlphaWire_Projects_Settings::get_model(),
+						'temperature' => 0.4,
+						'max_tokens'  => 60,
+						'system'      => 'You write single-sentence, factual Smart Money activity summaries for AlphaWire. Use ONLY the numbers given to you — never invent facts.',
+						'messages'    => array(
 							array(
 								'role'    => 'user',
 								'content' => $prompt,
@@ -282,7 +278,7 @@ class AlphaWire_Projects_Smart_Money_Service {
 		$code = wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( 200 !== $code || empty( $body['choices'][0]['message']['content'] ) ) {
+		if ( 200 !== $code || empty( $body['content'][0]['text'] ) ) {
 			// The blurb is a nice-to-have, not a sync-blocking dependency —
 			// log and move on rather than surfacing a hard error the way
 			// the primary, user-facing AI Summary action does.
@@ -296,7 +292,7 @@ class AlphaWire_Projects_Smart_Money_Service {
 			return '';
 		}
 
-		return trim( $body['choices'][0]['message']['content'] );
+		return trim( $body['content'][0]['text'] );
 	}
 
 	/**

@@ -4,15 +4,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * A settings screen under Projects → Settings, so the OpenAI key and model
- * live in wp-admin — never hard-coded in the plugin, never exposed on the
- * front end or through any REST endpoint.
+ * A settings screen under Projects → Settings, so the Claude (Anthropic)
+ * key and model live in wp-admin — never hard-coded in the plugin, never
+ * exposed on the front end or through any REST endpoint.
+ *
+ * Was OpenAI through v0.9.0 — switched to Claude at product's request
+ * (every AI integration in this plugin, not just this one; see
+ * class-smart-money-service.php's blurb generator too). The option keys
+ * below changed names along with the provider, so a previously-saved
+ * OpenAI key is simply orphaned under its old option name rather than
+ * reused as a Claude key — the two aren't interchangeable, a fresh
+ * Anthropic API key has to be entered here either way.
  */
 class AlphaWire_Projects_Settings {
 
-	const OPTION_API_KEY = 'alphawire_projects_openai_api_key';
-	const OPTION_MODEL   = 'alphawire_projects_openai_model';
-	const DEFAULT_MODEL  = 'gpt-5.6-luna';
+	const OPTION_API_KEY = 'alphawire_projects_claude_api_key';
+	const OPTION_MODEL   = 'alphawire_projects_claude_model';
+	const DEFAULT_MODEL  = 'claude-sonnet-5';
 
 	const OPTION_GITHUB_REPO   = 'alphawire_projects_github_repo';
 	const OPTION_GITHUB_BRANCH = 'alphawire_projects_github_branch';
@@ -67,20 +75,20 @@ class AlphaWire_Projects_Settings {
 		);
 
 		add_settings_section(
-			'alphawire_projects_openai_section',
-			'OpenAI — AI Project Summary',
+			'alphawire_projects_claude_section',
+			'Claude — AI Project Summary',
 			function () {
-				echo '<p>' . esc_html__( 'Used only to draft the Project Summary — in the background weekly, or when an editor clicks "Generate draft" on a Project. Never called when a visitor opens a Project page. A draft always lands as "Pending Review"; nothing publishes without an editor approving it.', 'alphawire-projects' ) . '</p>';
+				echo '<p>' . esc_html__( 'Used only to draft the Project Summary — in the background weekly, or when an editor clicks "Generate draft" on a Project. Never called when a visitor opens a Project page. A draft always lands as "Pending Review"; nothing publishes without an editor approving it. Also powers the optional Smart Money movement blurb on the Leaderboard (class-smart-money-service.php) — same key, no separate field.', 'alphawire-projects' ) . '</p>';
 			},
 			'alphawire-projects-settings'
 		);
 
 		add_settings_field(
 			self::OPTION_API_KEY,
-			'OpenAI API key',
+			'Claude API key',
 			array( __CLASS__, 'render_api_key_field' ),
 			'alphawire-projects-settings',
-			'alphawire_projects_openai_section'
+			'alphawire_projects_claude_section'
 		);
 
 		add_settings_field(
@@ -88,7 +96,7 @@ class AlphaWire_Projects_Settings {
 			'Model',
 			array( __CLASS__, 'render_model_field' ),
 			'alphawire-projects-settings',
-			'alphawire_projects_openai_section'
+			'alphawire_projects_claude_section'
 		);
 
 		register_setting(
@@ -215,7 +223,7 @@ class AlphaWire_Projects_Settings {
 			value=""
 			autocomplete="off"
 			class="regular-text"
-			placeholder="sk-..."
+			placeholder="sk-ant-..."
 		/>
 		<p class="description">
 			<?php echo esc_html( $masked ); ?> — leave this field blank to keep the current key.
@@ -266,10 +274,11 @@ class AlphaWire_Projects_Settings {
 			class="regular-text"
 		/>
 		<p class="description">
-			Current options for a short summary task like this one: <code>gpt-5.6-luna</code>
-			(cost-sensitive — the default here), <code>gpt-5.6-terra</code> (balanced),
-			<code>gpt-5.6-sol</code> (flagship, for higher-stakes cases). Model names change —
-			check <a href="https://platform.openai.com/docs/models" target="_blank" rel="noreferrer">OpenAI's model list</a>
+			Current options for a short summary task like this one: <code>claude-sonnet-5</code>
+			(best speed/intelligence balance — the default here), <code>claude-haiku-4-5-20251001</code>
+			(fastest, cheapest), <code>claude-opus-5-5</code> (flagship, for higher-stakes cases).
+			Model names change — check
+			<a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noreferrer">Claude's model list</a>
 			before changing this.
 		</p>
 		<?php

@@ -31,7 +31,7 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 			$settings_url = admin_url( 'edit.php?post_type=' . AlphaWire_Projects_Post_Type::POST_TYPE . '&page=alphawire-projects-settings' );
 			printf(
 				'<p>%s <a href="%s">%s</a></p>',
-				esc_html__( 'No OpenAI API key configured yet.', 'alphawire-projects' ),
+				esc_html__( 'No Claude API key configured yet.', 'alphawire-projects' ),
 				esc_url( $settings_url ),
 				esc_html__( 'Add one in Settings.', 'alphawire-projects' )
 			);
@@ -62,7 +62,7 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 		// one instead of keeping them separate. In practice that meant
 		// clicking this button just re-submitted the whole Update Post
 		// form to post.php (silently saving the post) and never reached
-		// admin-post.php or generate_draft() at all — no OpenAI call ever
+		// admin-post.php or generate_draft() at all — no Claude call ever
 		// happened, no error, nothing. Fixed the same way the Updater's
 		// "Check for updates" link avoids this: a plain nonce'd GET link
 		// to admin-post.php, no <form> involved. handle_manual_trigger()

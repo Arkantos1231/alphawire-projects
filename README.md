@@ -42,11 +42,13 @@ conversación.
 
 ### Fase 2, parcial (v0.3.0) — Generación real del AI Summary
 
-- **Projects → Settings** (página en wp-admin): API key de OpenAI (campo
-  tipo password, nunca se muestra el valor guardado — dejar en blanco al
-  guardar significa "no cambiar") y modelo (texto libre, default
-  `gpt-5.6-luna`; también soporta `gpt-5.6-terra` y `gpt-5.6-sol`). Ninguno
-  de los dos se expone por REST ni en el front end.
+- **Projects → Settings** (página en wp-admin): API key de Claude/Anthropic
+  (campo tipo password, nunca se muestra el valor guardado — dejar en
+  blanco al guardar significa "no cambiar") y modelo (texto libre, default
+  `claude-sonnet-5`; también soporta `claude-haiku-4-5-20251001` y
+  `claude-opus-5-5`). **Nota:** este era originalmente OpenAI — cambiado a
+  Claude a pedido de producto, ver la sección al final del documento.
+  Ninguno de los dos se expone por REST ni en el front end.
 - **Generación bajo demanda**: botón "Generate / refresh draft" en el
   meta box del edit screen de cada Project. Arma el prompt SOLO con datos
   editoriales del propio Project (descripción, categorías, timeline,
@@ -58,7 +60,7 @@ conversación.
   Action Scheduler si está disponible, si no WP-Cron): rellena solo los
   Projects que todavía no tienen texto de AI Summary — nunca toca uno que
   ya tiene contenido, sea borrador o aprobado.
-- La llamada a OpenAI ocurre solo en background o en una acción de
+- La llamada a Claude ocurre solo en background o en una acción de
   wp-admin autenticada (`admin-post.php` + nonce) — nunca al renderizar
   una página para un visitante.
 
@@ -120,7 +122,7 @@ Plugins — cada push a la branch seguida es efectivamente un release, sin
 necesidad de crear un GitHub Release formal. Sin dependencia de terceros
 (no había forma de instalar una librería de updater desde este entorno) —
 una clase propia, mismo estilo sin dependencias que las integraciones de
-CoinGecko/OpenAI. Ver `includes/class-updater.php`.
+CoinGecko/Claude. Ver `includes/class-updater.php`.
 
 **v0.7.8** agregó un link **"Check for updates"** en la fila del plugin en
 la página de Plugins (al lado de "Deactivate"). Antes de esto, la única
@@ -318,6 +320,29 @@ una pill chiquita "Editorial" al lado de la fila "Launched" (es el
 mercado), y abajo de la lista un divisor + pill "Market data ·
 external" + el pie de nota de dos líneas. CSS nuevo: `.aw-badge-text` /
 `.aw-editorial-tag` / `.aw-panel-divider` / `.aw-panel-footnote`.
+
+### v0.9.1 — Cambio de proveedor de IA: OpenAI → Claude
+
+A pedido de producto, **toda** integración de IA del plugin pasó de OpenAI
+a la API de Claude (Anthropic) — no solo AI Project Summary, también el
+blurb opcional de Smart Money agregado en v0.9.0
+(`class-smart-money-service.php`). Mismo comportamiento (siempre en
+background o por acción manual autenticada, nunca al renderizar una
+página; AI Summary siempre queda "Pending Review"), distinto proveedor:
+
+- **Projects → Settings**: el campo de API key y el de modelo ahora son de
+  Claude — ver la nota en la sección "Fase 2" más arriba. Una key de
+  OpenAI guardada previamente queda huérfana bajo su nombre de opción
+  viejo; hace falta cargar una API key de Anthropic nueva.
+- Endpoint: `https://api.anthropic.com/v1/messages` (Messages API) en vez
+  de `https://api.openai.com/v1/chat/completions` (Chat Completions).
+  Cambia la forma del request (el prompt de sistema va en un campo
+  `system` de nivel superior, no como mensaje `role: system` dentro de
+  `messages`; `max_tokens` en vez de `max_completion_tokens`) y de la
+  respuesta (`content[0].text` en vez de `choices[0].message.content`).
+- Modelo default: `claude-sonnet-5` (antes `gpt-5.6-luna`).
+- Ver `includes/class-ai-summary-service.php` y
+  `includes/class-smart-money-service.php::maybe_generate_blurb()`.
 
 ## Arquitectura: endpoints propios y datos de mercado
 

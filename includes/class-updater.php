@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Dependency-free "update from GitHub" checker. No third-party library —
  * this sandbox has no network path to fetch one, and it would be one more
  * thing to keep in sync anyway. Same hand-rolled wp_remote_get() style
- * already used for CoinGecko/OpenAI.
+ * already used for CoinGecko/Claude.
  *
  * Tracks a branch, not a formal GitHub Release: it compares the
  * `Version:` header of alphawire-projects.php on that branch (fetched from

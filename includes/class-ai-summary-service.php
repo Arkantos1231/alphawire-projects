@@ -5,11 +5,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Generates an AI Project Summary DRAFT — never publishes anything itself.
- * Mirrors the Market Summaries pattern already live on the site: OpenAI
+ * Mirrors the Market Summaries pattern already live on the site: Claude
  * writes from approved sources only, the result always lands as "Pending
  * Review", and an editor edits/rejects/regenerates/approves from wp-admin
  * before it's ever shown on the front end (BE spec §8-§10, Darian & Andy
  * §8-§10 — "AI generation must not happen when a user opens a Project page").
+ *
+ * Was OpenAI (Chat Completions) through v0.9.0 — switched to the Anthropic
+ * Messages API at product's request. Same draft-only/never-on-render
+ * behavior; only the HTTP call, request/response shape and error text
+ * changed. See class-settings.php for the (renamed) API key/model options.
  */
 class AlphaWire_Projects_AI_Summary_Service {
 
@@ -102,7 +107,7 @@ class AlphaWire_Projects_AI_Summary_Service {
 	public function generate_draft( $project_id ) {
 		$api_key = AlphaWire_Projects_Settings::get_api_key();
 		if ( empty( $api_key ) ) {
-			return new WP_Error( 'missing_api_key', 'No OpenAI API key configured (Projects → Settings).' );
+			return new WP_Error( 'missing_api_key', 'No Claude API key configured (Projects → Settings).' );
 		}
 
 		$prompt = $this->build_prompt( $project_id );
@@ -111,29 +116,28 @@ class AlphaWire_Projects_AI_Summary_Service {
 		}
 
 		$response = wp_remote_post(
-			'https://api.openai.com/v1/chat/completions',
+			'https://api.anthropic.com/v1/messages',
 			array(
 				'timeout' => 25,
 				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					// Anthropic's current docs list Authorization: Bearer as
+					// the primary auth method (x-api-key is kept as a legacy
+					// fallback) — same header shape the OpenAI call used, so
+					// this line barely changed.
+					'Authorization'     => 'Bearer ' . $api_key,
+					'anthropic-version' => '2023-06-01',
+					'Content-Type'      => 'application/json',
 				),
 				'body'    => wp_json_encode(
 					array(
-						'model'                 => AlphaWire_Projects_Settings::get_model(),
-						'temperature'           => 0.4,
-						// OpenAI retired `max_tokens` on newer models in favour
-						// of `max_completion_tokens` (confirmed live via the
-						// API's own error: "Unsupported parameter: 'max_tokens'
-						// is not supported with this model. Use
-						// 'max_completion_tokens' instead.") — same token cap,
-						// new parameter name.
-						'max_completion_tokens' => 220,
-						'messages'              => array(
-							array(
-								'role'    => 'system',
-								'content' => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language.',
-							),
+						'model'       => AlphaWire_Projects_Settings::get_model(),
+						'temperature' => 0.4,
+						'max_tokens'  => 220,
+						// The Messages API takes the system prompt as its own
+						// top-level field — not a "system"-role message inside
+						// `messages` the way OpenAI's Chat Completions did.
+						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language.',
+						'messages'    => array(
 							array(
 								'role'    => 'user',
 								'content' => $prompt,
@@ -152,13 +156,16 @@ class AlphaWire_Projects_AI_Summary_Service {
 		$code = wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( 200 !== $code || empty( $body['choices'][0]['message']['content'] ) ) {
+		// Claude's reply text sits at content[0].text (an array of content
+		// blocks, text being the only type we ever ask for here) — not
+		// choices[0].message.content the way OpenAI shaped it.
+		if ( 200 !== $code || empty( $body['content'][0]['text'] ) ) {
 			$message = isset( $body['error']['message'] ) ? $body['error']['message'] : ( 'HTTP ' . $code );
 			$this->log_failure( $project_id, $message );
-			return new WP_Error( 'openai_error', $message );
+			return new WP_Error( 'claude_error', $message );
 		}
 
-		$draft = trim( $body['choices'][0]['message']['content'] );
+		$draft = trim( $body['content'][0]['text'] );
 
 		if ( function_exists( 'update_field' ) ) {
 			update_field( 'ai_summary_text', $draft, $project_id );
@@ -243,7 +250,7 @@ class AlphaWire_Projects_AI_Summary_Service {
 	 * Overwritten by the next attempt; cleared on the next success.
 	 */
 	private function log_failure( $project_id, $message ) {
-		error_log( sprintf( '[AlphaWire Projects] OpenAI summary generation failed for Project #%d: %s', $project_id, $message ) );
+		error_log( sprintf( '[AlphaWire Projects] Claude summary generation failed for Project #%d: %s', $project_id, $message ) );
 		update_option(
 			'aw_ai_summary_last_error_' . $project_id,
 			array(

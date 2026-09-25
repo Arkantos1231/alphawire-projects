@@ -1,10 +1,35 @@
 <?php
 /**
  * Plugin Name: AlphaWire Projects
- * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via OpenAI.
- * Version: 0.9.0
+ * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
+ * Version: 0.9.1
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.1 — Every AI integration in this plugin switched from OpenAI to
+ * Claude (the Anthropic Messages API), at product's request — not just AI
+ * Project Summary, also the optional Smart Money movement blurb v0.9.0
+ * added. Same behavior everywhere this touches (draft-only, always
+ * background or an authenticated wp-admin action, never called while
+ * rendering a page for a visitor) — only the provider changed:
+ *   - class-settings.php: the API key and model options are renamed
+ *     (alphawire_projects_openai_* → alphawire_projects_claude_*) and the
+ *     section relabeled "Claude — AI Project Summary". A previously-saved
+ *     OpenAI key is simply orphaned under its old option name — the two
+ *     providers aren't interchangeable, a fresh Anthropic key has to be
+ *     entered either way. New default model: claude-sonnet-5 (was
+ *     gpt-5.6-luna).
+ *   - class-ai-summary-service.php: swapped the request from OpenAI's
+ *     Chat Completions shape to Anthropic's Messages API —
+ *     https://api.anthropic.com/v1/messages, system prompt as its own
+ *     top-level `system` field (not a `role: system` message),
+ *     `max_tokens` (not `max_completion_tokens`), and the reply now reads
+ *     from `content[0].text` instead of `choices[0].message.content`.
+ *   - class-smart-money-service.php: maybe_generate_blurb() gets the exact
+ *     same swap.
+ *   - class-ai-summary-metabox.php: "No OpenAI API key configured" notice
+ *     now says Claude.
+ * See README.md's new "v0.9.1" section for the full before/after.
  *
  * v0.9.0 — Smart Money Leaderboard: Phase 1 of the AlphaWire × Nansen
  * Integration Proposal (the other two phases — Alpha Intelligence and
@@ -429,7 +454,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.0' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.1' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
