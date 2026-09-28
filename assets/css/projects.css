@@ -151,7 +151,11 @@
 
 @media (max-width: 860px) {
 	.aw-directory {
-		grid-template-columns: 1fr;
+		/* A bare 1fr track still sizes to its content's min-content by
+		   default — needed minmax(0, 1fr) so the mobile nav scroller below
+		   can't force this column (and the whole page) wider than the
+		   viewport. */
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 
@@ -161,6 +165,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 22px;
+	min-width: 0;
 }
 
 @media (max-width: 860px) {
@@ -206,6 +211,41 @@
 	text-align: center;
 	margin-right: 6px;
 	opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+	/* Mobile: Explore/Categories become a horizontally scrolling strip of
+	   name-only pills instead of a stacked list of full-width rows. */
+	.aw-nav-scroll {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		gap: 6px;
+		padding-bottom: 4px;
+		-webkit-overflow-scrolling: touch;
+		/* Flex/grid ancestors default to a content-based min-width, which
+		   let this nowrap row force the sidebar (and page) wider instead of
+		   scrolling within its own box. */
+		min-width: 0;
+		/* Scrollable but the scrollbar itself is never shown. */
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.aw-nav-scroll::-webkit-scrollbar {
+		display: none;
+	}
+
+	.aw-nav-scroll .aw-nav-item {
+		flex: 0 0 auto;
+		justify-content: center;
+		white-space: nowrap;
+		background: var(--aw-surface);
+	}
+
+	.aw-nav-scroll .aw-nav-icon {
+		display: none;
+	}
 }
 
 .aw-directory-main {
@@ -255,14 +295,26 @@
 }
 
 .aw-searchbar button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	background: var(--aw-surface-2);
 	border: none;
 	color: var(--aw-muted);
 	border-radius: 50%;
 	width: 28px;
 	height: 28px;
+	padding: 0;
+	line-height: 1;
 	cursor: pointer;
 	font-size: 14px;
+}
+
+/* Overrides the theme's global button:hover/:focus pink (#CC3366) fill. */
+.aw-searchbar button:hover,
+.aw-searchbar button:focus {
+	background: var(--aw-surface-2);
+	color: var(--aw-muted);
 }
 
 .aw-filters {
@@ -308,6 +360,57 @@
 	display: grid;
 	gap: 10px;
 	grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+}
+
+@media (max-width: 600px) {
+	/* Mobile: All Projects only — 2 cards per row instead of the auto-fill
+	   single column that minmax(270px, 1fr) collapses to on narrow screens.
+	   Scoped to this section so Editor's Picks/Recently Updated/Launched
+	   keep their existing single-column mobile layout. */
+	.aw-grid-all-projects {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	/* Grid items default to a content-based min-width, which — combined
+	   with the nowrap text below — was forcing each card (and so the
+	   whole row) wider than the viewport instead of shrinking to the
+	   column. */
+	.aw-grid-all-projects .aw-card {
+		min-width: 0;
+	}
+
+	.aw-grid-all-projects .aw-card-link {
+		flex-direction: column;
+		align-items: stretch;
+		padding: 10px;
+		gap: 6px;
+	}
+
+	.aw-grid-all-projects .aw-card .aw-logo {
+		width: 32px;
+		height: 32px;
+		font-size: 12px;
+	}
+
+	.aw-grid-all-projects .aw-card-body {
+		min-width: 0;
+		width: 100%;
+	}
+
+	.aw-grid-all-projects .aw-card-title-row {
+		min-width: 0;
+	}
+
+	.aw-grid-all-projects .aw-card-title-row .aw-name {
+		font-size: 13px;
+	}
+
+	.aw-grid-all-projects .aw-card-price {
+		text-align: left;
+		min-width: 0;
+		width: 100%;
+	}
 }
 
 .aw-card {
@@ -522,6 +625,30 @@
 	}
 }
 
+@media (max-width: 600px) {
+	/* Mobile: 2 Trending Projects cards per row instead of the auto-fill
+	   single column that minmax(180px, 1fr) collapses to on narrow screens. */
+	.aw-trend-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.aw-trend-link {
+		padding: 14px 8px 10px;
+	}
+
+	.aw-trend-link .aw-logo {
+		width: 36px;
+		height: 36px;
+		font-size: 13px;
+		margin-bottom: 6px;
+	}
+
+	.aw-trend-link .aw-name {
+		font-size: 12px;
+	}
+}
+
 /* ---------------- Project Profile tabs ---------------- */
 
 .aw-profile-tabs {
@@ -563,6 +690,12 @@
 .aw-timeline-scroll {
 	overflow-x: auto;
 	padding-bottom: 4px;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.aw-timeline-scroll::-webkit-scrollbar {
+	display: none;
 }
 
 .aw-timeline {
@@ -837,7 +970,7 @@
 }
 
 .aw-panel-title-row h2 {
-	font-size: 13px;
+	font-size: 13px !important;
 	font-weight: 600;
 	margin: 0;
 }
@@ -885,7 +1018,8 @@
 }
 
 .aw-ai-summary-text {
-	font-size: 13px;
+	font-size: 12px;
+	font-weight: 300;
 	line-height: 1.6;
 	color: var(--aw-muted);
 }
@@ -1076,6 +1210,13 @@
 @media (max-width: 700px) {
 	.aw-coverage-section .aw-grid {
 		grid-template-columns: 1fr;
+	}
+
+	/* Mobile: show 4 articles at a time; "Load more" reveals the rest by
+	   adding .aw-coverage-expanded (see projects.js), same as items it
+	   fetches and appends afterwards. */
+	.aw-coverage-section:not(.aw-coverage-expanded) .aw-grid .aw-coverage-item:nth-child(n+5) {
+		display: none;
 	}
 }
 

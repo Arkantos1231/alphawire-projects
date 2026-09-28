@@ -52,29 +52,33 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 	<aside class="aw-sidebar">
 		<div class="aw-sidebar-block">
 			<div class="aw-sidebar-heading">Explore</div>
-			<a class="aw-nav-item<?php echo ( ! $filters_active && 'all' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( $archive_url ); ?>">
-				<span class="aw-nav-icon" aria-hidden="true">◎</span> All Projects
-			</a>
-			<a class="aw-nav-item<?php echo ( ! $filters_active && 'trending' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'trending', $archive_url ) ); ?>">
-				<span class="aw-nav-icon" aria-hidden="true">⚡</span> Trending
-			</a>
-			<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-updated' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-updated', $archive_url ) ); ?>">
-				<span class="aw-nav-icon" aria-hidden="true">↻</span> Recently Updated
-			</a>
-			<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-launched' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-launched', $archive_url ) ); ?>">
-				<span class="aw-nav-icon" aria-hidden="true">✦</span> Recently Launched
-			</a>
+			<div class="aw-nav-scroll">
+				<a class="aw-nav-item<?php echo ( ! $filters_active && 'all' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( $archive_url ); ?>">
+					<span class="aw-nav-icon" aria-hidden="true">◎</span> All Projects
+				</a>
+				<a class="aw-nav-item<?php echo ( ! $filters_active && 'trending' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'trending', $archive_url ) ); ?>">
+					<span class="aw-nav-icon" aria-hidden="true">⚡</span> Trending
+				</a>
+				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-updated' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-updated', $archive_url ) ); ?>">
+					<span class="aw-nav-icon" aria-hidden="true">↻</span> Recently Updated
+				</a>
+				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-launched' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-launched', $archive_url ) ); ?>">
+					<span class="aw-nav-icon" aria-hidden="true">✦</span> Recently Launched
+				</a>
+			</div>
 		</div>
 
 		<?php if ( $sidebar_categories ) : ?>
 			<div class="aw-sidebar-block">
 				<div class="aw-sidebar-heading">Categories</div>
-				<?php foreach ( $sidebar_categories as $c ) : ?>
-					<a class="aw-nav-item<?php echo ( $category === $c['slug'] ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'category', $c['slug'], $archive_url ) ); ?>">
-						<span><?php echo esc_html( $c['label'] ); ?></span>
-						<span class="aw-muted"><?php echo (int) $c['count']; ?></span>
-					</a>
-				<?php endforeach; ?>
+				<div class="aw-nav-scroll">
+					<?php foreach ( $sidebar_categories as $c ) : ?>
+						<a class="aw-nav-item<?php echo ( $category === $c['slug'] ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'category', $c['slug'], $archive_url ) ); ?>">
+							<span><?php echo esc_html( $c['label'] ); ?></span>
+							<span class="aw-muted"><?php echo (int) $c['count']; ?></span>
+						</a>
+					<?php endforeach; ?>
+				</div>
 			</div>
 		<?php endif; ?>
 	</aside>
@@ -271,7 +275,7 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 					<h2>All Projects</h2>
 				</div>
 				<?php if ( $cards ) : ?>
-					<div class="aw-grid">
+					<div class="aw-grid aw-grid-all-projects">
 						<?php foreach ( $cards as $card ) : ?>
 							<?php aw_projects_render_card( $card ); ?>
 						<?php endforeach; ?>
