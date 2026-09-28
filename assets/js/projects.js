@@ -162,6 +162,9 @@
 
 		section.classList.add( 'is-filter-loading' );
 		section.setAttribute( 'aria-busy', 'true' );
+		// A filter change starts back at page 1, so mobile should cap it
+		// at 4 again too.
+		section.classList.remove( 'aw-coverage-expanded' );
 		loadCoverage( section, selected, 1, false );
 	}
 
@@ -175,6 +178,9 @@
 		var loadMore = e.target.closest( '[data-aw-coverage-load-more]' );
 		if ( loadMore ) {
 			var section = loadMore.closest( '.aw-coverage-section' );
+			// Lifts the mobile 4-at-a-time cap (see projects.css) so the
+			// items it's about to fetch aren't hidden along with them.
+			section.classList.add( 'aw-coverage-expanded' );
 			var page = parseInt( section.dataset.awCoveragePage || '1', 10 ) + 1;
 			loadCoverage( section, section.dataset.awCoverageType || 'all', page, true );
 		}
