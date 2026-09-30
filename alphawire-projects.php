@@ -2,9 +2,23 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.2
+ * Version: 0.9.3
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.3 — CoinGecko cadence back to every 15 min (product's call, after
+ * trying 5 min in v0.9.2 — the earlier "no visitor can ever trigger a live
+ * CoinGecko call" fix stays exactly as-is, only the background refresh
+ * interval changed back):
+ *   - class-market-data-service.php: CACHE_TTL 300 → 900 (back to 15 min).
+ *     register_schedule()'s interval and cron hook name reverted
+ *     (alphawire_projects_5min → _15min again). get_market_data() is still
+ *     the same cache-only alias for get_cached_market_data() introduced in
+ *     v0.9.2 — that part didn't change, only how often refresh_all() runs.
+ *   - Migration guard option (alphawire_projects_market_cadence_version)
+ *     bumped again, v2 → v3, so a site currently on the 5-minute interval
+ *     from v0.9.2 gets it force-cleared and re-registered at 15 minutes on
+ *     its next request, same self-healing pattern as before.
  *
  * v0.9.2 — CoinGecko sync moved from every 15 min to every 5 min, and
  * get_market_data() (the single-Project page's read path) stopped having
@@ -478,7 +492,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.2' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.3' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

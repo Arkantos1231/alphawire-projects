@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The ONLY class that talks to a market-data provider.
  *
  * Today: CoinGecko's free public endpoint — no API key, works at our low
- * request volume (a curated set of projects refreshed every 5 min, see
+ * request volume (a curated set of projects refreshed every 15 min, see
  * build plan §6). No paid CoinGecko access yet, so this is deliberately
  * built against the free tier rather than a placeholder/mock — when a Demo
  * or paid key shows up later, it's added via the
@@ -18,19 +18,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  * CACHE-ONLY on every accessor, full stop — no per-user/per-page-load
  * CoinGecko calls, ever (product's explicit requirement: visitors must
  * never be able to exhaust the rate limit just by browsing). Only
- * refresh_all(), on its own 5-minute background schedule, ever calls
+ * refresh_all(), on its own 15-minute background schedule, ever calls
  * fetch_and_cache(); get_market_data() and get_cached_market_data() both
  * only ever read what that job already wrote to the database. This used
  * to be a real distinction — get_market_data() had a short-timeout live
  * fallback on a cold cache for the single-Project page — but that's
- * exactly the per-user-call path product asked to close, so as of the
- * cadence change below it's gone. See get_market_data()'s own docblock.
+ * exactly the per-user-call path product asked to close, so as of v0.9.2
+ * it's gone (the cadence itself went back to 15 min in v0.9.3, after a
+ * brief stint at 5 min — see get_market_data()'s own docblock).
  */
 class AlphaWire_Projects_Market_Data_Service {
 
 	const CACHE_PREFIX       = 'aw_project_market_';
 	const STALE_OPTION_PREFIX = 'aw_project_market_stale_';
-	const CACHE_TTL          = 300; // 5 minutes, matches the background refresh cadence.
+	const CACHE_TTL          = 900; // 15 minutes, matches the background refresh cadence.
 	const CRON_HOOK          = 'alphawire_projects_refresh_market_data';
 
 	private static $instance = null;
@@ -50,23 +51,26 @@ class AlphaWire_Projects_Market_Data_Service {
 		add_action(
 			'init',
 			function () {
-				// Cadence changed 15min -> 5min in v0.9.2. Both scheduling
-				// checks below only ask "is *something* already scheduled
-				// for this hook" — an already-running 15-min recurrence
-				// (any site that had this plugin active before v0.9.2)
-				// satisfies that forever and would keep firing every 15
-				// minutes with no way to ever pick up the new interval. Same
-				// class of bug as the rewrite-rules self-heal in
-				// class-post-type.php (v0.7.2): a stored version marker,
-				// checked on every request, is what actually catches a
-				// stale schedule instead of just trusting "we already asked
-				// once, so we must be fine."
-				if ( 'v2' !== get_option( 'alphawire_projects_market_cadence_version' ) ) {
+				// Cadence history: 15min (through v0.9.1) -> 5min (v0.9.2) ->
+				// back to 15min (v0.9.3, product's call after trying 5min).
+				// Both scheduling checks below only ask "is *something*
+				// already scheduled for this hook" — an already-running
+				// recurrence at the *previous* interval satisfies that
+				// forever and would keep firing on the old cadence with no
+				// way to ever pick up a changed one. Same class of bug as
+				// the rewrite-rules self-heal in class-post-type.php
+				// (v0.7.2): a stored version marker, checked on every
+				// request, is what actually catches a stale schedule
+				// instead of just trusting "we already asked once, so we
+				// must be fine." Bumping this marker again (v2 -> v3) is
+				// what makes a site that's currently on the 5-min interval
+				// (from v0.9.2) correctly fall back to 15 min here.
+				if ( 'v3' !== get_option( 'alphawire_projects_market_cadence_version' ) ) {
 					if ( function_exists( 'as_unschedule_all_actions' ) ) {
 						as_unschedule_all_actions( self::CRON_HOOK, array(), 'alphawire-projects' );
 					}
 					wp_clear_scheduled_hook( self::CRON_HOOK );
-					update_option( 'alphawire_projects_market_cadence_version', 'v2', false );
+					update_option( 'alphawire_projects_market_cadence_version', 'v3', false );
 				}
 
 				if ( function_exists( 'as_schedule_recurring_action' ) ) {
@@ -74,19 +78,19 @@ class AlphaWire_Projects_Market_Data_Service {
 					// ships with several plugins on this site) — it retries
 					// and logs, which bare WP-Cron doesn't.
 					if ( false === as_next_scheduled_action( self::CRON_HOOK ) ) {
-						as_schedule_recurring_action( time(), 5 * MINUTE_IN_SECONDS, self::CRON_HOOK, array(), 'alphawire-projects' );
+						as_schedule_recurring_action( time(), 15 * MINUTE_IN_SECONDS, self::CRON_HOOK, array(), 'alphawire-projects' );
 					}
 				} elseif ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-					wp_schedule_event( time(), 'alphawire_projects_5min', self::CRON_HOOK );
+					wp_schedule_event( time(), 'alphawire_projects_15min', self::CRON_HOOK );
 				}
 			}
 		);
 	}
 
 	public function register_schedule( $schedules ) {
-		$schedules['alphawire_projects_5min'] = array(
-			'interval' => 5 * MINUTE_IN_SECONDS,
-			'display'  => __( 'Every 5 minutes (AlphaWire Projects)', 'alphawire-projects' ),
+		$schedules['alphawire_projects_15min'] = array(
+			'interval' => 15 * MINUTE_IN_SECONDS,
+			'display'  => __( 'Every 15 minutes (AlphaWire Projects)', 'alphawire-projects' ),
 		);
 		return $schedules;
 	}
@@ -132,14 +136,15 @@ class AlphaWire_Projects_Market_Data_Service {
 	 * timeout live CoinGecko fallback on a cold cache, since a Project page
 	 * can render before the first background refresh ever runs; product
 	 * has since asked explicitly that no visitor's page load can ever
-	 * trigger a CoinGecko call, so that fallback is gone. A cold cache now
-	 * behaves exactly like get_cached_market_data() below: last known-good
-	 * value if one exists, otherwise an empty payload until the next
-	 * 5-minute background sync runs. The two methods are functionally
-	 * identical now — kept as separate names so each call site (single
-	 * Project page vs. Directory/listing cards) still documents its own
-	 * intent, and so a future difference between them doesn't mean
-	 * renaming every caller.
+	 * trigger a CoinGecko call, so that fallback is gone as of v0.9.2. A
+	 * cold cache now behaves exactly like get_cached_market_data() below:
+	 * last known-good value if one exists, otherwise an empty payload
+	 * until the next background sync runs — every 15 minutes as of
+	 * v0.9.3 (v0.9.2 briefly tried 5 minutes; product asked to go back to
+	 * 15). The two methods are functionally identical now — kept as
+	 * separate names so each call site (single Project page vs.
+	 * Directory/listing cards) still documents its own intent, and so a
+	 * future difference between them doesn't mean renaming every caller.
 	 */
 	public function get_market_data( $coingecko_id ) {
 		return $this->get_cached_market_data( $coingecko_id );
@@ -335,7 +340,7 @@ class AlphaWire_Projects_Market_Data_Service {
 	 * HTTP calls on one page render); get_market_data() above is now just
 	 * an alias for this same method, so the "never fetches" guarantee here
 	 * applies everywhere market data is read, not only listings. Only
-	 * refresh_all() — the 5-minute background job — ever calls
+	 * refresh_all() — the 15-minute background job — ever calls
 	 * fetch_and_cache(); nothing reachable from a page render does.
 	 */
 	public function get_cached_market_data( $coingecko_id ) {

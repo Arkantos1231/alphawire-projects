@@ -15,8 +15,8 @@ conversación.
 - Campos ACF: identidad, links, launch date, trending order, editor's pick,
   related projects, y el bloque de AI Summary (3 estados).
 - Servicio de mercado contra el endpoint público y gratis de CoinGecko, con
-  caché de 5 min + fallback "último valor bueno" + refresh en background
-  (cadencia original de v0.1.0: 15 min → pasó a 5 min en v0.9.2).
+  caché de 15 min + fallback "último valor bueno" + refresh en background
+  (probamos 5 min en v0.9.2; producto pidió volver a 15 min en v0.9.3).
 - `GET /alphawire-projects/v1/projects/{slug}`.
 
 ### Fase 1 (v0.2.0)
@@ -367,6 +367,20 @@ todavía podía disparar un fetch en vivo:
 - Ver la sección "Arquitectura" más abajo, actualizada para reflejar que ya
   no existe el paso de "fetch en vivo" en el fallback en cascada.
 
+### v0.9.3 — CoinGecko: cadencia de vuelta a 15 min
+
+Producto decidió volver a 15 min después de probar 5 en v0.9.2. El fix de
+v0.9.2 que cerraba el fetch en vivo por visitante **no cambia** — sigue sin
+existir ningún camino donde cargar una página dispare una llamada a
+CoinGecko. Lo único que cambió es qué tan seguido corre el job de
+background:
+
+- `class-market-data-service.php`: `CACHE_TTL` 300 → 900 (15 min otra vez).
+  `register_schedule()` y el hook de cron vuelven a `alphawire_projects_15min`.
+- Guard de migración bumpeado de nuevo (`v2` → `v3`): un sitio que quedó en
+  el intervalo de 5 min de v0.9.2 lo limpia y lo re-agenda a 15 min en el
+  siguiente request.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace
@@ -405,18 +419,19 @@ toca la API cruda:
   ahora (vía `get_market_data()`) también para el de un solo Project. Nunca
   fetchea; solo lee caché, para no disparar llamadas bloqueantes a
   CoinGecko al renderizar una página.
-- Fallback en cascada, sin paso de fetch en vivo: caché de 5 min → último
+- Fallback en cascada, sin paso de fetch en vivo: caché de 15 min → último
   valor bueno guardado sin expiración (marcado `stale: true`) → payload
   vacío si nunca hubo un fetch exitoso. Ningún caller recibe `null` ni
   tiene que manejar "esto falló" como caso especial.
-- Refresh real solo en background: un job cada 5 min (Action Scheduler si
-  está disponible, si no WP-Cron; cadencia 15 min → 5 min en v0.9.2, con un
-  guard de migración que fuerza a los sitios que ya tenían el evento de 15
-  min agendado a pasarse al de 5 min en el siguiente request) recorre todos
-  los Projects publicados con `coingecko_id` y repuebla el caché, con una
-  pausa de 300ms entre proyectos para no pisar el rate limit del tier
-  gratis de CoinGecko (5-15 req/min). CoinGecko nunca se llama fuera de
-  este job — ni al renderizar una página ni por ningún otro camino.
+- Refresh real solo en background: un job cada 15 min (Action Scheduler si
+  está disponible, si no WP-Cron; probamos 5 min en v0.9.2, producto pidió
+  volver a 15 en v0.9.3 — con un guard de migración que fuerza a los sitios
+  que quedaron en el intervalo de 5 min a pasarse al de 15 min en el
+  siguiente request) recorre todos los Projects publicados con
+  `coingecko_id` y repuebla el caché, con una pausa de 300ms entre
+  proyectos para no pisar el rate limit del tier gratis de CoinGecko (5-15
+  req/min). CoinGecko nunca se llama fuera de este job — ni al renderizar
+  una página ni por ningún otro camino.
 - Ya tiene un filtro (`alphawire_projects_coingecko_request_args`) listo
   para agregar una API key de CoinGecko Demo/paga el día que exista, sin
   tocar nada más del plugin.
