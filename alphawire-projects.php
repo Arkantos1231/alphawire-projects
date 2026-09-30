@@ -2,9 +2,33 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.1
+ * Version: 0.9.2
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.2 — CoinGecko sync moved from every 15 min to every 5 min, and
+ * get_market_data() (the single-Project page's read path) stopped having
+ * its own live-fallback call. Product's explicit ask: a visitor loading a
+ * page must never be able to trigger a CoinGecko call, full stop — only
+ * the scheduled background job may ever hit the CoinGecko API, and every
+ * front-end read (single Project page and Directory/listing cards alike)
+ * only ever reads what that job already cached in the database.
+ *   - class-market-data-service.php: CACHE_TTL 900 → 300 (5 min, matches
+ *     the new refresh cadence). register_schedule()'s interval and cron
+ *     hook name updated (alphawire_projects_15min → _5min). get_market_data()
+ *     no longer falls back to a short-timeout live fetch on a cold cache —
+ *     it's now a thin alias for get_cached_market_data(), so both the single
+ *     Project page and the Directory/listing cards go through the exact same
+ *     cache-only read path. Only refresh_all(), on its own 5-minute
+ *     background schedule, still calls the private fetch_and_cache().
+ *   - Added a migration guard (new option:
+ *     alphawire_projects_market_cadence_version) so a site that already had
+ *     the old 15-minute event scheduled gets it force-cleared and
+ *     re-registered at 5 minutes on its next request, rather than silently
+ *     staying on the old cadence forever — same self-healing pattern
+ *     class-post-type.php already uses for rewrite rules (see the v0.7.2
+ *     entry below).
+ * See README.md's Fase 0 / Arquitectura sections, updated to match.
  *
  * v0.9.1 — Every AI integration in this plugin switched from OpenAI to
  * Claude (the Anthropic Messages API), at product's request — not just AI
@@ -454,7 +478,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.1' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.2' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
