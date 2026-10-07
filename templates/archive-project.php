@@ -106,9 +106,33 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 
 		<?php if ( $filters_active ) : ?>
 
+			<?php
+			// Staging feedback #17: name what's being filtered, not just
+			// "N results". Labels come from the real terms so they match the
+			// sidebar exactly.
+			$filter_title = '';
+			if ( '' !== $category ) {
+				$term         = get_term_by( 'slug', $category, 'pillar' );
+				$filter_title = $term ? $term->name : $category;
+			} elseif ( '' !== $narrative ) {
+				$term         = get_term_by( 'slug', $narrative, 'topic' );
+				$filter_title = $term ? $term->name : $narrative;
+			}
+			if ( '' !== $search ) {
+				$filter_title = $filter_title
+					? sprintf( '%s · “%s”', $filter_title, $search )
+					: sprintf( 'Results for “%s”', $search );
+			}
+			$result_total = ( $query && isset( $query->found_posts ) ) ? (int) $query->found_posts : count( $cards );
+			?>
 			<section class="aw-section">
 				<div class="aw-section-header">
-					<h2><?php echo count( $cards ); ?> result<?php echo 1 === count( $cards ) ? '' : 's'; ?></h2>
+					<div>
+						<?php if ( $filter_title ) : ?>
+							<h2><?php echo esc_html( $filter_title ); ?></h2>
+						<?php endif; ?>
+						<p class="aw-hint"><?php echo esc_html( sprintf( _n( '%d project', '%d projects', $result_total, 'alphawire-projects' ), $result_total ) ); ?></p>
+					</div>
 					<a class="aw-hint" href="<?php echo esc_url( $archive_url ); ?>">Clear filters</a>
 				</div>
 				<?php if ( $cards ) : ?>

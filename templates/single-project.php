@@ -19,6 +19,17 @@ while ( have_posts() ) :
 	$project = AlphaWire_Projects_REST::build_payload( get_post() );
 	$market  = $project['market'];
 
+	// Staging feedback #18: when the background refresh hasn't run, say so
+	// in plain words and say how old the numbers are.
+	$market_as_of = ! empty( $market['updatedAt'] ) ? aw_projects_format_date( $market['updatedAt'], 'M j, g:i a' ) : '';
+	if ( ! empty( $market['stale'] ) ) {
+		$market_status = $market_as_of
+			? sprintf( 'Prices may be out of date · last updated %s', $market_as_of )
+			: 'Market data unavailable right now';
+	} else {
+		$market_status = $market_as_of ? sprintf( 'Updated %s', $market_as_of ) : '';
+	}
+
 	$coverage_by_type = array();
 	foreach ( $project['coverage'] as $item ) {
 		$coverage_by_type[ $item['type'] ][] = $item;
@@ -39,10 +50,12 @@ while ( have_posts() ) :
 
 	<div class="aw-projects">
 
-		<nav class="aw-breadcrumb">
+		<nav class="aw-breadcrumb" aria-label="Breadcrumb">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+			<span aria-hidden="true">/</span>
 			<a href="<?php echo esc_url( get_post_type_archive_link( AlphaWire_Projects_Post_Type::POST_TYPE ) ); ?>">Projects</a>
-			<span>/</span>
-			<span><?php echo esc_html( $project['name'] ); ?></span>
+			<span aria-hidden="true">/</span>
+			<span aria-current="page"><?php echo esc_html( $project['name'] ); ?></span>
 		</nav>
 
 		<div class="aw-profile-head">
@@ -90,7 +103,7 @@ while ( have_posts() ) :
 			<div class="aw-panel">
 				<div class="aw-panel-title-row">
 					<h2>Key Stats</h2>
-					<span class="aw-badge-text"><?php echo esc_html( ! empty( $market['stale'] ) ? 'Last known price' : 'Live market data' ); ?></span>
+					<span class="aw-badge-text<?php echo ! empty( $market['stale'] ) ? ' is-stale' : ''; ?>"><?php echo esc_html( ! empty( $market['stale'] ) ? 'Last known price' : 'Live market data' ); ?></span>
 				</div>
 				<dl>
 					<?php if ( $project['ticker'] ) : ?>
@@ -101,15 +114,15 @@ while ( have_posts() ) :
 					<?php endif; ?>
 					<div class="aw-stat-row">
 						<dt>Price</dt>
-						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?> <span class="aw-change-period">24h</span></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>Market Cap</dt>
-						<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+						<dd><?php echo esc_html( aw_projects_compact_usd( $market['marketCapRaw'] ?? null, $market['marketCap'] ?? null ) ); ?></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>24h Volume</dt>
-						<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+						<dd><?php echo esc_html( aw_projects_compact_usd( $market['volume24hRaw'] ?? null, $market['volume24h'] ?? null ) ); ?></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>Circulating Supply</dt>
@@ -132,6 +145,9 @@ while ( have_posts() ) :
 				</dl>
 				<div class="aw-panel-divider"></div>
 				<span class="aw-badge">Market data · external</span>
+				<?php if ( $market_status ) : ?>
+					<p class="aw-panel-footnote aw-market-status<?php echo ! empty( $market['stale'] ) ? ' is-stale' : ''; ?>"><?php echo esc_html( $market_status ); ?></p>
+				<?php endif; ?>
 				<p class="aw-panel-footnote">Market data — read only, never edited by AlphaWire editorial. Launch
 					date is editorially maintained.</p>
 			</div>
@@ -143,6 +159,21 @@ while ( have_posts() ) :
 				</div>
 				<?php if ( 'approved' === $project['aiSummary']['status'] && $project['aiSummary']['text'] ) : ?>
 					<p class="aw-ai-summary-text"><?php echo esc_html( $project['aiSummary']['text'] ); ?></p>
+					<?php $summary_updated = aw_projects_format_date( $project['aiSummary']['updatedAt'] ?? '', 'M j, Y' ); ?>
+					<?php if ( $summary_updated ) : ?>
+						<p class="aw-ai-updated">Last updated <?php echo esc_html( $summary_updated ); ?></p>
+					<?php endif; ?>
+					<p class="aw-ai-disclaimer"><?php echo esc_html( AlphaWire_Projects_Settings::get_ai_disclaimer() ); ?></p>
+					<details class="aw-report-issue" data-aw-report-issue="<?php echo esc_attr( $project['slug'] ); ?>">
+						<summary>Report an issue</summary>
+						<form class="aw-report-form" novalidate>
+							<label for="aw-report-message">What looks wrong in this summary?</label>
+							<textarea id="aw-report-message" name="message" rows="3" maxlength="1000" required></textarea>
+							<label class="aw-report-hp" aria-hidden="true">Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+							<button type="submit">Send report</button>
+							<p class="aw-report-status" role="status" aria-live="polite"></p>
+						</form>
+					</details>
 				<?php else : ?>
 					<div class="aw-ai-pending">
 						An AI summary is generated in the background and reviewed by an editor before it appears
@@ -203,7 +234,12 @@ while ( have_posts() ) :
 					</div>
 
 					<div class="aw-overview-col">
-						<?php if ( ! empty( $project['timeline'] ) ) : ?>
+						<?php if ( empty( $project['timeline'] ) ) : ?>
+							<div class="aw-panel">
+								<h2>Timeline</h2>
+								<p class="aw-empty">No milestones have been added for <?php echo esc_html( $project['name'] ); ?> yet.</p>
+							</div>
+						<?php else : ?>
 							<div class="aw-panel">
 								<div class="aw-panel-title-row">
 									<h2>Timeline</h2>
@@ -212,7 +248,7 @@ while ( have_posts() ) :
 								<ol class="aw-timeline-compact">
 									<?php foreach ( array_reverse( $project['timeline'] ) as $event ) : ?>
 										<li class="aw-tlc-item">
-											<span class="aw-tlc-date"><?php echo esc_html( ! empty( $event['date'] ) ? wp_date( 'M Y', strtotime( $event['date'] ) ) : '' ); ?></span>
+											<span class="aw-tlc-date"><?php echo esc_html( ! empty( $event['date'] ) ? aw_projects_format_date( $event['date'], 'M Y' ) : '' ); ?></span>
 											<p class="aw-tlc-title"><?php echo esc_html( $event['title'] ?? '' ); ?></p>
 											<?php if ( ! empty( $event['description'] ) ) : ?>
 												<p class="aw-tlc-desc"><?php echo esc_html( $event['description'] ); ?></p>
@@ -236,15 +272,15 @@ while ( have_posts() ) :
 							<dl>
 								<div class="aw-stat-row">
 									<dt>Price</dt>
-									<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+									<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?> <span class="aw-change-period">24h</span></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>Market Cap</dt>
-									<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+									<dd><?php echo esc_html( aw_projects_compact_usd( $market['marketCapRaw'] ?? null, $market['marketCap'] ?? null ) ); ?></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>24h Volume</dt>
-									<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+									<dd><?php echo esc_html( aw_projects_compact_usd( $market['volume24hRaw'] ?? null, $market['volume24h'] ?? null ) ); ?></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>Circulating Supply</dt>
@@ -265,6 +301,9 @@ while ( have_posts() ) :
 									</div>
 								<?php endif; ?>
 							</dl>
+							<?php if ( $market_status ) : ?>
+								<p class="aw-panel-footnote aw-market-status<?php echo ! empty( $market['stale'] ) ? ' is-stale' : ''; ?>"><?php echo esc_html( $market_status ); ?></p>
+							<?php endif; ?>
 							<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
 								edited by AlphaWire editorial.</p>
 						</div>
@@ -338,7 +377,7 @@ while ( have_posts() ) :
 									<li class="aw-tl-item">
 										<span class="aw-tl-dot" aria-hidden="true"></span>
 										<div class="aw-tl-card">
-											<span class="aw-tl-date"><?php echo esc_html( ! empty( $event['date'] ) ? wp_date( 'M Y', strtotime( $event['date'] ) ) : '' ); ?></span>
+											<span class="aw-tl-date"><?php echo esc_html( ! empty( $event['date'] ) ? aw_projects_format_date( $event['date'], 'M Y' ) : '' ); ?></span>
 											<p class="aw-tl-title"><?php echo esc_html( $event['title'] ?? '' ); ?></p>
 											<?php if ( ! empty( $event['description'] ) ) : ?>
 												<p class="aw-tl-desc"><?php echo esc_html( $event['description'] ); ?></p>
@@ -350,6 +389,11 @@ while ( have_posts() ) :
 							</ol>
 						</div>
 						<span class="aw-tl-badge">AlphaWire editorial</span>
+					</section>
+				<?php else : ?>
+					<section class="aw-section aw-panel">
+						<h2><?php echo esc_html( $project['name'] ); ?> Timeline</h2>
+						<p class="aw-empty">No milestones have been added for <?php echo esc_html( $project['name'] ); ?> yet.</p>
 					</section>
 				<?php endif; ?>
 			</div>
@@ -393,6 +437,11 @@ while ( have_posts() ) :
 							<button type="button" class="aw-coverage-load-more" data-aw-coverage-load-more>Load more</button>
 						<?php endif; ?>
 					</section>
+				<?php else : ?>
+					<section class="aw-section aw-panel">
+						<h2>Latest from AlphaWire</h2>
+						<p class="aw-empty">No AlphaWire coverage has been linked to <?php echo esc_html( $project['name'] ); ?> yet.</p>
+					</section>
 				<?php endif; ?>
 			</div>
 			<div class="aw-profile-tab-panel" id="aw-panel-research" role="tabpanel" aria-labelledby="aw-tab-research" data-aw-profile-panel="research" hidden>
@@ -435,6 +484,11 @@ while ( have_posts() ) :
 							<button type="button" class="aw-coverage-load-more" data-aw-coverage-load-more>Load more</button>
 						<?php endif; ?>
 					</section>
+				<?php else : ?>
+					<section class="aw-section aw-panel">
+						<h2>AlphaWire Research on <?php echo esc_html( $project['name'] ); ?></h2>
+						<p class="aw-empty">No research has been selected for <?php echo esc_html( $project['name'] ); ?> yet.</p>
+					</section>
 				<?php endif; ?>
 			</div>
 
@@ -449,6 +503,11 @@ while ( have_posts() ) :
 								<?php aw_projects_render_card( $card ); ?>
 							<?php endforeach; ?>
 						</div>
+					</section>
+				<?php else : ?>
+					<section class="aw-section aw-panel">
+						<h2>Related Projects</h2>
+						<p class="aw-empty">No related projects have been added yet.</p>
 					</section>
 				<?php endif; ?>
 			</div>

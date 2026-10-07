@@ -2,9 +2,29 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.3
+ * Version: 0.9.4
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.4 — Fixes from the SEO team's MVP staging feedback (5 Oct):
+ *   #1  AI summary no longer quotes prices (prompt forbids market figures)
+ *       and Markdown is stripped, so no stray "#". Existing drafts need a
+ *       Regenerate to drop old prices.
+ *   #2  Timeline dates: ACF date pickers now return Y-m-d; strtotime() was
+ *       reading d/m/Y as m/d/Y (10 Sep -> 9 Oct).
+ *   #3  AlphaWire Coverage = content whose "Related Project" field points
+ *       at this Project (eng. review §13/§15), not shared categories.
+ *   #4  Research tab no longer shows the Project itself when empty.
+ *   #5  "Report an issue" + disclaimer under the AI summary (wording is a
+ *       placeholder in Settings until Product approves it).
+ *   #6  Schema: Thing (about the page) instead of Organization.
+ *   #7  Breadcrumb starts at Home.  #8 Tabs deep-link via #timeline etc.
+ *   #9  Empty states for Timeline/Coverage/Research/Related.
+ *   #11 "Last updated" under the summary.  #12 $1.73T / 24h label.
+ *   #13 Trending only lists Projects with a Trending order set, stable order.
+ *   #15 Reject action + clearer Regenerate in the AI Summary box.
+ *   #16 Mobile: heading before filters.  #17 Filter title on filtered view.
+ *   #18 Market data timestamp; "may be out of date" when stale.
  *
  * v0.9.3 — CoinGecko cadence back to every 15 min (product's call, after
  * trying 5 min in v0.9.2 — the earlier "no visitor can ever trigger a live
@@ -492,7 +512,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.3' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.4' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

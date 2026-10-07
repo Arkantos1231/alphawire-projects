@@ -192,6 +192,7 @@ class AlphaWire_Projects_Fields {
 							'draft'    => 'Draft',
 							'pending'  => 'Pending Review',
 							'approved' => 'Approved / Published',
+							'rejected' => 'Rejected',
 						),
 						'default_value' => 'draft',
 						'instructions'  => 'Mirrors the Market Summaries AI workflow already in production: only "Approved" is ever shown on the public profile.',
@@ -207,6 +208,10 @@ class AlphaWire_Projects_Fields {
 						'label' => 'Last updated',
 						'name'  => 'ai_summary_updated',
 						'type'  => 'date_time_picker',
+						// Same strtotime() trap as the Timeline date — keep the
+						// returned value unambiguous so the front end can format it.
+						'return_format'  => 'Y-m-d H:i:s',
+						'display_format' => 'd/m/Y g:i a',
 					),
 				),
 				'location' => array(
@@ -241,6 +246,13 @@ class AlphaWire_Projects_Fields {
 								'label' => 'Date',
 								'name'  => 'date',
 								'type'  => 'date_picker',
+								// ACF's default return format is d/m/Y, and PHP's
+								// strtotime() reads "10/09/2026" as m/d/Y (9 Oct),
+								// which is what shifted every Timeline date by a
+								// day/month swap on the front end. Y-m-d is
+								// unambiguous; display format is unchanged.
+								'return_format'  => 'Y-m-d',
+								'display_format' => 'd/m/Y',
 							),
 							array(
 								'key'   => 'field_aw_timeline_title',

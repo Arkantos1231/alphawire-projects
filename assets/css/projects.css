@@ -1510,3 +1510,136 @@
 		display: none;
 	}
 }
+
+/* ---------------- v0.9.4 — staging feedback fixes ---------------- */
+
+/* #9 — empty-state messages inside panels: compact, left-aligned. */
+.aw-projects .aw-panel .aw-empty {
+	padding: 12px 0 4px;
+	text-align: left;
+	font-size: 12px;
+}
+
+/* #11 / #5 — AI summary meta, disclaimer and "Report an issue". */
+.aw-ai-updated,
+.aw-ai-disclaimer {
+	margin: 8px 0 0;
+	font-size: 10px;
+	line-height: 1.5;
+	color: var(--aw-muted);
+}
+
+.aw-ai-disclaimer {
+	font-style: italic;
+}
+
+.aw-report-issue {
+	margin-top: 10px;
+	font-size: 11px;
+}
+
+.aw-report-issue > summary {
+	cursor: pointer;
+	color: var(--aw-muted);
+	text-decoration: underline;
+	list-style: none;
+}
+
+.aw-report-issue > summary::-webkit-details-marker {
+	display: none;
+}
+
+.aw-report-issue > summary:hover {
+	color: var(--aw-text);
+}
+
+.aw-report-form {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.aw-report-form label {
+	color: var(--aw-muted);
+}
+
+.aw-projects .aw-report-form textarea {
+	width: 100%;
+	box-sizing: border-box;
+	background: var(--aw-surface-2);
+	color: var(--aw-text);
+	border: 1px solid var(--aw-border);
+	border-radius: var(--aw-radius);
+	padding: 8px;
+	font: inherit;
+	font-size: 12px;
+	resize: vertical;
+}
+
+.aw-projects .aw-report-form button[type="submit"] {
+	align-self: flex-start;
+	background: var(--aw-accent);
+	color: #14161a;
+	border: 0;
+	border-radius: var(--aw-radius);
+	padding: 6px 12px;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.aw-projects .aw-report-form button[type="submit"]:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+.aw-report-status {
+	margin: 0;
+	min-height: 1em;
+	color: var(--aw-muted);
+}
+
+.aw-report-hp {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+/* #12 — say which period the price change covers. */
+.aw-change-period {
+	font-size: 10px;
+	color: var(--aw-muted);
+}
+
+/* #18 — make out-of-date prices visible to the reader. */
+.aw-market-status.is-stale,
+.aw-badge-text.is-stale {
+	color: var(--aw-negative);
+}
+
+/* #16 — on phones the page heading and search come first, then the
+   Explore/Categories nav, then the results. The sidebar sits before
+   <main> in the markup (it's a left column on desktop), so <main> is
+   flattened with display:contents and its children are re-ordered as
+   direct grid items. */
+@media (max-width: 860px) {
+	.aw-directory .aw-directory-main {
+		display: contents;
+	}
+
+	.aw-directory .aw-directory-main > * {
+		order: 2;
+		min-width: 0;
+	}
+
+	.aw-directory .aw-directory-main > .aw-directory-head {
+		order: 0;
+	}
+
+	.aw-directory .aw-sidebar {
+		order: 1;
+	}
+}

@@ -198,13 +198,22 @@ class AlphaWire_Projects_Directory_REST {
 			'post_status'    => 'publish',
 			'posts_per_page' => 12,
 			'meta_key'       => 'trending_order',
-			'orderby'        => 'meta_value_num',
-			'order'          => 'ASC',
+			// Staging feedback #13: ACF saves an empty Trending order field
+			// as '' rather than deleting it, so 'EXISTS' matched EVERY saved
+			// Project. They all sorted as 0 and MySQL broke the tie however
+			// it liked — Trending reshuffled on its own between loads. Only
+			// Projects with an actual number set are Trending; ties fall
+			// back to title so the order is stable.
 			'meta_query'     => array(
 				array(
 					'key'     => 'trending_order',
-					'compare' => 'EXISTS',
+					'value'   => '',
+					'compare' => '!=',
 				),
+			),
+			'orderby'        => array(
+				'meta_value_num' => 'ASC',
+				'title'          => 'ASC',
 			),
 		) );
 		return array_map( array( __CLASS__, 'card' ), $query->posts );

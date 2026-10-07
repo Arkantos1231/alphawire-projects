@@ -4,9 +4,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Finds existing AlphaWire content related to a Project through shared
- * pillar/topic terms. Explicitly selected News and Podcasts remain a
- * separate Project-side relationship used by the Research tab.
+ * Finds existing AlphaWire content related to a Project through the
+ * content-side "Related Project" field the editor sets on each article or
+ * podcast. Explicitly selected News and Podcasts remain a separate
+ * Project-side relationship used by the Research tab.
  */
 class AlphaWire_Projects_Content_Relationships {
 
@@ -58,24 +59,39 @@ class AlphaWire_Projects_Content_Relationships {
 	 * @param string|null $bucket 'news' | 'podcast' | 'research' | 'interviews' | null (all)
 	 */
 	public static function get_coverage( $project_id, $bucket = null, $limit = 20 ) {
-		$tax_query = self::project_tax_query( $project_id );
-		if ( ! $tax_query ) {
+		$project_id = (int) $project_id;
+		if ( ! $project_id ) {
 			return array();
 		}
 
+		// Coverage is the content an editor explicitly linked to THIS
+		// Project through the "Related Project" field on the article/
+		// podcast (engineering review §13/§15: "Editor selects Project →
+		// WordPress creates relationship"). It used to match on shared
+		// pillar/topic terms instead, so every Project in a category got
+		// the same feed — e.g. a Tether lawsuit story on the USD Coin page
+		// (staging feedback #3). The field is a single post_object, stored
+		// as a plain post ID, so an exact meta match is enough.
 		$args = array(
-			'post_type'      => array( 'news', 'podcast' ),
+			'post_type'      => self::CONTENT_TYPES,
 			'post_status'    => 'publish',
 			'posts_per_page' => $limit,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
-			'tax_query'      => $tax_query,
+			'no_found_rows'  => true,
+			'meta_query'     => array(
+				array(
+					'key'     => self::META_KEY,
+					'value'   => $project_id,
+					'compare' => '=',
+				),
+			),
 		);
 
 		if ( 'podcast' === $bucket ) {
 			$args['post_type'] = array( 'podcast' );
 		} elseif ( 'news' === $bucket ) {
-			$args['post_type'] = array( 'news' );
+			$args['post_type'] = array( 'news', 'post' );
 		} elseif ( 'research' === $bucket ) {
 			$args['category_name'] = 'deepdive';
 		} elseif ( 'interviews' === $bucket ) {
@@ -94,38 +110,26 @@ class AlphaWire_Projects_Content_Relationships {
 		return $items;
 	}
 
-	private static function project_tax_query( $project_id ) {
-		$tax_query = array( 'relation' => 'OR' );
-		foreach ( array( 'pillar', 'topic' ) as $taxonomy ) {
-			$term_ids = wp_get_object_terms( $project_id, $taxonomy, array( 'fields' => 'ids' ) );
-			if ( is_wp_error( $term_ids ) || empty( $term_ids ) ) {
-				continue;
-			}
-			$tax_query[] = array(
-				'taxonomy' => $taxonomy,
-				'field'    => 'term_id',
-				'terms'    => $term_ids,
-			);
-		}
-
-		return count( $tax_query ) > 1 ? $tax_query : array();
-	}
-
 	/**
-	 * Returns only the News and Podcasts explicitly selected on the Project.
-	 * This is separate from get_coverage(), which also includes content-side
-	 * related_project links for the general AlphaWire Coverage view.
+	 * Returns only the News and Podcasts explicitly selected on the Project
+	 * (its own "Research" picks). Related Projects are NOT mixed in here —
+	 * they have their own Related tab.
+	 *
+	 * Staging feedback #4: with nothing picked, ACF returns false/'' and the
+	 * old (array) cast turned that into [false]; get_post( false ) returns
+	 * the *current* global post, so the Project showed up as its own
+	 * Research item. get_project_content() now drops empty values, and the
+	 * current Project is excluded explicitly as a second guard.
 	 */
 	public static function get_selected_coverage( $project_id ) {
 		$items = array();
-		$seen  = array();
+		$seen  = array( (int) $project_id => true );
 
 		$selected_news     = self::get_project_content( self::PROJECT_NEWS_META_KEY, $project_id );
 		$selected_podcasts = self::get_project_content( self::PROJECT_PODCASTS_META_KEY, $project_id );
-		$related_projects  = self::get_project_content( self::PROJECT_RELATED_PROJECTS_META_KEY, $project_id );
 
 		foreach ( array_merge( $selected_news, $selected_podcasts ) as $selected ) {
-			$post = is_object( $selected ) ? $selected : get_post( $selected );
+			$post = is_object( $selected ) ? $selected : get_post( (int) $selected );
 			if (
 				! $post ||
 				'publish' !== $post->post_status ||
@@ -135,22 +139,7 @@ class AlphaWire_Projects_Content_Relationships {
 				continue;
 			}
 
-			$items[]          = self::coverage_item( $post );
-			$seen[ $post->ID ] = true;
-		}
-
-		foreach ( $related_projects as $related ) {
-			$post = is_object( $related ) ? $related : get_post( $related );
-			if (
-				! $post ||
-				'publish' !== $post->post_status ||
-				AlphaWire_Projects_Post_Type::POST_TYPE !== $post->post_type ||
-				isset( $seen[ $post->ID ] )
-			) {
-				continue;
-			}
-
-			$items[]          = self::related_project_item( $post );
+			$items[]           = self::coverage_item( $post );
 			$seen[ $post->ID ] = true;
 		}
 
@@ -206,7 +195,13 @@ class AlphaWire_Projects_Content_Relationships {
 			? get_field( $meta_key, $project_id )
 			: get_post_meta( $project_id, $meta_key, true );
 
-		return (array) $value;
+		if ( empty( $value ) ) {
+			return array();
+		}
+
+		// Never let a falsy entry through: get_post( false|0|'' ) returns
+		// the current global post instead of nothing.
+		return array_values( array_filter( is_array( $value ) ? $value : array( $value ) ) );
 	}
 
 	private static function coverage_item( $post ) {
@@ -231,19 +226,6 @@ class AlphaWire_Projects_Content_Relationships {
 			'date'    => get_the_date( 'c', $post ),
 			'readTime' => $read_time,
 			'url'     => get_permalink( $post ),
-		);
-	}
-
-	private static function related_project_item( $post ) {
-		return array(
-			'id'       => $post->ID,
-			'type'     => 'Project',
-			'title'    => get_the_title( $post ),
-			'excerpt'  => get_the_excerpt( $post ),
-			'image'    => get_the_post_thumbnail_url( $post, 'medium' ),
-			'date'     => get_the_modified_date( 'c', $post ),
-			'readTime' => null,
-			'url'      => get_permalink( $post ),
 		);
 	}
 

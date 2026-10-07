@@ -136,7 +136,13 @@ class AlphaWire_Projects_AI_Summary_Service {
 						// The Messages API takes the system prompt as its own
 						// top-level field — not a "system"-role message inside
 						// `messages` the way OpenAI's Chat Completions did.
-						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language.',
+						// The summary sits next to the live price box, so it must
+						// never quote market figures: the coverage it reads was
+						// written on older days and its prices go stale (staging
+						// feedback #1 — "trades near $78,400" beside a $86,320
+						// price). Plain text only: the front end prints this
+						// escaped, so Markdown like "# Bitcoin" showed literally.
+						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. Never mention prices, price levels, market capitalisation, trading volume, percentage moves or any other market figure, even if the source material contains them — live market data is shown separately on the page. Describe what the project is, what it does and recent milestones. 3-4 sentences, present tense, neutral analytical tone, no marketing language. Output plain prose only: no title, no heading, no Markdown, no bullet points.',
 						'messages'    => array(
 							array(
 								'role'    => 'user',
@@ -165,7 +171,11 @@ class AlphaWire_Projects_AI_Summary_Service {
 			return new WP_Error( 'claude_error', $message );
 		}
 
-		$draft = trim( $body['content'][0]['text'] );
+		$draft = self::clean_summary_text( $body['content'][0]['text'] );
+		if ( '' === $draft ) {
+			$this->log_failure( $project_id, 'Empty summary after cleanup' );
+			return new WP_Error( 'claude_error', 'Claude returned an empty summary.' );
+		}
 
 		if ( function_exists( 'update_field' ) ) {
 			update_field( 'ai_summary_text', $draft, $project_id );
@@ -239,6 +249,35 @@ class AlphaWire_Projects_AI_Summary_Service {
 		}
 
 		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Belt-and-braces for the "plain prose only" instruction: strips any
+	 * Markdown the model still emits (a leading "# Title" line, **bold**,
+	 * list markers) so nothing renders as a literal symbol on the page.
+	 */
+	public static function clean_summary_text( $text ) {
+		$text  = str_replace( array( "\r\n", "\r" ), "\n", (string) $text );
+		$lines = array();
+		foreach ( explode( "\n", $text ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			// A heading line on its own is a title, not part of the summary.
+			if ( preg_match( '/^#{1,6}\s/', $line ) ) {
+				continue;
+			}
+			$line    = preg_replace( '/^(?:[-*+]|\d+[.)])\s+/', '', $line );
+			$line    = preg_replace( '/^#+\s*/', '', $line );
+			$lines[] = $line;
+		}
+		$text = implode( ' ', $lines );
+		$text = preg_replace( '/(\*\*|__)(.+?)\1/', '$2', $text );
+		$text = preg_replace( '/(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])/', '$1', $text );
+		$text = str_replace( '`', '', $text );
+
+		return trim( preg_replace( '/\s{2,}/', ' ', $text ) );
 	}
 
 	/**

@@ -37,6 +37,14 @@ class AlphaWire_Projects_Settings {
 	// back instead of an auth error on its next hourly run.
 	const OPTION_NANSEN_API_KEY = 'alphawire_projects_nansen_api_key';
 
+	// AI Summary disclaimer (engineering review §11: "the appropriate
+	// disclaimer and correction wording must be agreed before launch").
+	// Editable here so the approved wording can go live without a release;
+	// the default is a placeholder until Product/Editorial sign it off.
+	const OPTION_AI_DISCLAIMER  = 'alphawire_projects_ai_disclaimer';
+	const DEFAULT_AI_DISCLAIMER = 'This summary is AI-assisted and reviewed by AlphaWire editors. It is for information only, is not financial advice, and does not reflect live market data.';
+	const OPTION_REPORT_EMAIL   = 'alphawire_projects_report_email';
+
 	public static function hooks() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
@@ -95,6 +103,42 @@ class AlphaWire_Projects_Settings {
 			self::OPTION_MODEL,
 			'Model',
 			array( __CLASS__, 'render_model_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_claude_section'
+		);
+
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_AI_DISCLAIMER,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => self::DEFAULT_AI_DISCLAIMER,
+			)
+		);
+
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_REPORT_EMAIL,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_email',
+				'default'           => '',
+			)
+		);
+
+		add_settings_field(
+			self::OPTION_AI_DISCLAIMER,
+			'Summary disclaimer',
+			array( __CLASS__, 'render_ai_disclaimer_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_claude_section'
+		);
+
+		add_settings_field(
+			self::OPTION_REPORT_EMAIL,
+			'"Report an issue" emails go to',
+			array( __CLASS__, 'render_report_email_field' ),
 			'alphawire-projects-settings',
 			'alphawire_projects_claude_section'
 		);
@@ -332,6 +376,32 @@ class AlphaWire_Projects_Settings {
 			Directory, no matter how many Projects get tagged with them.
 		</p>
 		<?php
+	}
+
+	public static function render_ai_disclaimer_field() {
+		$value = get_option( self::OPTION_AI_DISCLAIMER, self::DEFAULT_AI_DISCLAIMER );
+		?>
+		<textarea name="<?php echo esc_attr( self::OPTION_AI_DISCLAIMER ); ?>" rows="3" class="large-text"><?php echo esc_textarea( $value ); ?></textarea>
+		<p class="description">Shown under every approved AI Project Summary. Replace with the wording Product/Editorial approve.</p>
+		<?php
+	}
+
+	public static function render_report_email_field() {
+		$value = get_option( self::OPTION_REPORT_EMAIL, '' );
+		?>
+		<input type="email" class="regular-text" name="<?php echo esc_attr( self::OPTION_REPORT_EMAIL ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" />
+		<p class="description">Who is emailed when a reader reports an issue with a summary. Blank = the site admin email. Every report is also listed on the Project's edit screen.</p>
+		<?php
+	}
+
+	public static function get_ai_disclaimer() {
+		$value = trim( (string) get_option( self::OPTION_AI_DISCLAIMER, self::DEFAULT_AI_DISCLAIMER ) );
+		return '' !== $value ? $value : self::DEFAULT_AI_DISCLAIMER;
+	}
+
+	public static function get_report_email() {
+		$value = get_option( self::OPTION_REPORT_EMAIL, '' );
+		return is_email( $value ) ? $value : get_option( 'admin_email' );
 	}
 
 	public static function render_page() {

@@ -175,3 +175,57 @@ function aw_projects_sparkline( $prices, $width = 300, $height = 48 ) {
 		esc_attr( $stroke )
 	);
 }
+
+/**
+ * Formats an ACF date for display without ever guessing the field order.
+ *
+ * Staging feedback #2: ACF date pickers used to return d/m/Y, and
+ * strtotime() reads "10/09/2026" as 9 October — every Timeline date with a
+ * day of 12 or less came out with day and month swapped. This reads the
+ * formats ACF can hand back explicitly (Ymd as stored, Y-m-d as now
+ * returned, d/m/Y for any value cached before the field change) and only
+ * falls back to strtotime() for anything else.
+ */
+function aw_projects_format_date( $value, $format = 'M Y' ) {
+	if ( empty( $value ) ) {
+		return '';
+	}
+	$value = trim( (string) $value );
+	$tz    = wp_timezone();
+
+	foreach ( array( 'Ymd', 'Y-m-d H:i:s', 'Y-m-d', 'd/m/Y g:i a', 'd/m/Y' ) as $candidate ) {
+		$date   = DateTimeImmutable::createFromFormat( '!' . $candidate, $value, $tz );
+		$errors = DateTimeImmutable::getLastErrors();
+		if ( $date && ( ! $errors || ( 0 === $errors['warning_count'] && 0 === $errors['error_count'] ) ) ) {
+			return wp_date( $format, $date->getTimestamp(), $tz );
+		}
+	}
+
+	$timestamp = strtotime( $value );
+	return $timestamp ? wp_date( $format, $timestamp ) : '';
+}
+
+/**
+ * "$1,734,612,159,064.00" -> "$1.73T". Uses the raw number the market
+ * payload already carries (marketCapRaw / volume24hRaw) and falls back to
+ * the preformatted string when the raw value isn't there.
+ * Staging feedback #12.
+ */
+function aw_projects_compact_usd( $raw, $fallback = null ) {
+	if ( null === $raw || '' === $raw || ! is_numeric( $raw ) ) {
+		return $fallback ? $fallback : '—';
+	}
+	$n     = (float) $raw;
+	$units = array(
+		1000000000000 => 'T',
+		1000000000    => 'B',
+		1000000       => 'M',
+		1000          => 'K',
+	);
+	foreach ( $units as $size => $suffix ) {
+		if ( abs( $n ) >= $size ) {
+			return '$' . number_format( $n / $size, 2 ) . $suffix;
+		}
+	}
+	return '$' . number_format( $n, 2 );
+}

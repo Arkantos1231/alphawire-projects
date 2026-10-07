@@ -19,10 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * asserts a purchasable listing on this exact page (price + availability +
  * an implied checkout), which a Project profile is not — Google Search
  * Console flags Product markup like that as invalid/incomplete, and it's
- * simply not true of this page. Organization + PropertyValue states the
- * same facts (ticker, price, market cap, 24h volume, launch date) without
- * making that claim, which is the standard safe pattern for describing an
- * asset/entity rather than a product for sale.
+ * simply not true of this page. Organization was used before v0.9.4 and is
+ * equally untrue (a token isn't a company) — see add_project_schema().
  *
  * Pulls from AlphaWire_Projects_REST::build_payload() — the exact same
  * data contract the REST endpoint and templates/single-project.php already
@@ -53,19 +51,36 @@ class AlphaWire_Projects_Schema {
 		$project = AlphaWire_Projects_REST::build_payload( $post );
 		$market  = $project['market'];
 
+		// Staging feedback #6: this used to be '@type' => 'Organization',
+		// which tells Google the coin/token is a company. schema.org has no
+		// crypto-asset type, so the entity is a plain Thing, described by
+		// the page (WebPage.about) rather than claiming to be an
+		// organisation or a product for sale. The ticker goes in
+		// `identifier` (a Thing property). Price/market cap/volume are no
+		// longer emitted: additionalProperty isn't valid on Thing (nor was
+		// it on Organization), and point-in-time prices in cached HTML go
+		// stale the moment the page is crawled.
 		$entity = array(
-			'@type'       => 'Organization',
-			'@id'         => get_permalink( $post ) . '#project',
-			'name'        => $project['name'],
-			'url'         => get_permalink( $post ),
+			'@type' => 'Thing',
+			'@id'   => get_permalink( $post ) . '#project',
+			'name'  => $project['name'],
+			'url'   => get_permalink( $post ),
 		);
+
+		if ( $project['ticker'] ) {
+			$entity['alternateName'] = $project['ticker'];
+			$entity['identifier']    = array(
+				'@type'      => 'PropertyValue',
+				'propertyID' => 'Ticker',
+				'value'      => (string) $project['ticker'],
+			);
+		}
 
 		if ( $project['description'] ) {
 			$entity['description'] = wp_strip_all_tags( (string) $project['description'] );
 		}
 
 		if ( $project['logo'] ) {
-			$entity['logo']  = $project['logo'];
 			$entity['image'] = $project['logo'];
 		}
 
@@ -79,34 +94,12 @@ class AlphaWire_Projects_Schema {
 			$entity['sameAs'] = array_values( array_unique( $same_as ) );
 		}
 
-		$properties = array();
-		if ( $project['ticker'] ) {
-			$properties[] = self::property( 'Ticker', $project['ticker'] );
-		}
-		if ( ! empty( $market['price'] ) ) {
-			$properties[] = self::property( 'Price (USD)', $market['price'] );
-		}
-		if ( ! empty( $market['marketCap'] ) ) {
-			$properties[] = self::property( 'Market cap (USD)', $market['marketCap'] );
-		}
-		if ( ! empty( $market['volume24h'] ) ) {
-			$properties[] = self::property( '24h volume (USD)', $market['volume24h'] );
-		}
-		if ( null !== $market['change24h'] && '' !== $market['change24h'] ) {
-			$properties[] = self::property( '24h change (%)', $market['change24h'] . '%' );
-		}
-		if ( $project['launchDate'] ) {
-			$properties[] = self::property( 'Launch date', $project['launchDate'] );
-		}
-		if ( ! empty( $market['updatedAt'] ) ) {
-			// Whatever's in this block reflects the data as of when this
-			// HTML was generated/crawled, not "right now" — said explicitly
-			// here rather than implying a live price feed to anything
-			// reading the markup (search engines included).
-			$properties[] = self::property( 'Market data as of', $market['updatedAt'] );
-		}
-		if ( $properties ) {
-			$entity['additionalProperty'] = $properties;
+		// Point Rank Math's own WebPage node at this entity, so the page is
+		// "about" the project rather than the project being the publisher.
+		foreach ( $data as $key => $piece ) {
+			if ( is_array( $piece ) && isset( $piece['@type'] ) && in_array( 'WebPage', (array) $piece['@type'], true ) ) {
+				$data[ $key ]['about'] = array( '@id' => $entity['@id'] );
+			}
 		}
 
 		/**
@@ -117,13 +110,5 @@ class AlphaWire_Projects_Schema {
 		$data['aw_project'] = apply_filters( 'alphawire_projects_schema_entity', $entity, $project, $post );
 
 		return $data;
-	}
-
-	private static function property( $name, $value ) {
-		return array(
-			'@type' => 'PropertyValue',
-			'name'  => $name,
-			'value' => (string) $value,
-		);
 	}
 }

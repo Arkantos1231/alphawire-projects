@@ -8,7 +8,28 @@
 ( function () {
 	'use strict';
 
-	function activateTab( tab ) {
+	// Staging feedback #8: each tab gets its own shareable address
+	// (/projects/solana/#timeline). A hash, not a path, so it needs no
+	// rewrite rules and the server still renders one page.
+	var TAB_HASH_PREFIX = '#';
+
+	function tabFromHash() {
+		var name = ( window.location.hash || '' ).replace( TAB_HASH_PREFIX, '' );
+		if ( ! name || ! /^[a-z-]+$/.test( name ) ) {
+			return null;
+		}
+		return document.querySelector( '.aw-profile-tab[data-aw-profile-tab="' + name + '"]' );
+	}
+
+	function updateHash( tab ) {
+		var name = tab.getAttribute( 'data-aw-profile-tab' );
+		var hash = 'overview' === name ? '' : TAB_HASH_PREFIX + name;
+		if ( window.history && window.history.replaceState ) {
+			window.history.replaceState( null, '', window.location.pathname + window.location.search + hash );
+		}
+	}
+
+	function activateTab( tab, skipHash ) {
 		var tabs = document.querySelectorAll( '[data-aw-profile-tab]' );
 		var panels = document.querySelectorAll( '[data-aw-profile-panel]' );
 		var target = tab.getAttribute( 'data-aw-profile-tab' );
@@ -25,7 +46,25 @@
 			panel.classList.toggle( 'is-active', active );
 			panel.hidden = ! active;
 		} );
+
+		if ( ! skipHash ) {
+			updateHash( tab );
+		}
 	}
+
+	function activateFromHash() {
+		var tab = tabFromHash();
+		if ( tab ) {
+			activateTab( tab, true );
+		}
+	}
+
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', activateFromHash );
+	} else {
+		activateFromHash();
+	}
+	window.addEventListener( 'hashchange', activateFromHash );
 
 	document.addEventListener( 'click', function ( e ) {
 		var tab = e.target.closest( '[data-aw-profile-tab]' );
@@ -184,5 +223,71 @@
 			var page = parseInt( section.dataset.awCoveragePage || '1', 10 ) + 1;
 			loadCoverage( section, section.dataset.awCoverageType || 'all', page, true );
 		}
+	} );
+} )();
+
+/**
+ * "Report an issue" on the AI Project Summary (staging feedback #5).
+ * Posts to /projects/{slug}/report-issue — see
+ * AlphaWire_Projects_REST::report_issue().
+ */
+( function () {
+	'use strict';
+
+	var cfg = window.AlphaWireProjects || {};
+
+	document.addEventListener( 'submit', function ( e ) {
+		var form = e.target.closest( '.aw-report-form' );
+		if ( ! form ) {
+			return;
+		}
+		e.preventDefault();
+
+		var wrapper = form.closest( '[data-aw-report-issue]' );
+		var status = form.querySelector( '.aw-report-status' );
+		var button = form.querySelector( 'button[type="submit"]' );
+		var message = ( form.elements.message.value || '' ).trim();
+
+		if ( message.length < 5 ) {
+			status.textContent = 'Please tell us what looks wrong.';
+			return;
+		}
+		if ( ! cfg.restUrl || ! wrapper ) {
+			status.textContent = 'Reporting is unavailable right now.';
+			return;
+		}
+
+		button.disabled = true;
+		status.textContent = 'Sending…';
+
+		var headers = { 'Content-Type': 'application/json' };
+		if ( cfg.nonce ) {
+			headers[ 'X-WP-Nonce' ] = cfg.nonce;
+		}
+
+		fetch( cfg.restUrl + '/projects/' + encodeURIComponent( wrapper.getAttribute( 'data-aw-report-issue' ) ) + '/report-issue', {
+			method: 'POST',
+			headers: headers,
+			credentials: 'same-origin',
+			body: JSON.stringify( { message: message, website: form.elements.website ? form.elements.website.value : '' } )
+		} )
+			.then( function ( response ) {
+				return response.json().then( function ( data ) {
+					if ( ! response.ok ) {
+						throw new Error( ( data && data.message ) || 'Could not send your report.' );
+					}
+					return data;
+				} );
+			} )
+			.then( function () {
+				form.reset();
+				status.textContent = 'Thanks — an editor will review this summary.';
+			} )
+			.catch( function ( err ) {
+				status.textContent = err.message || 'Could not send your report.';
+			} )
+			.finally( function () {
+				button.disabled = false;
+			} );
 	} );
 } )();
