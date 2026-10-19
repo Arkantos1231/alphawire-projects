@@ -38,6 +38,8 @@ class AlphaWire_Projects_AI_Summary_Service {
 		);
 
 		add_action( 'admin_post_alphawire_projects_generate_summary', array( $this, 'handle_manual_trigger' ) );
+		add_action( 'admin_post_alphawire_projects_reject_summary', array( $this, 'handle_reject_trigger' ) );
+		add_action( 'admin_post_alphawire_projects_mark_report_reviewed', array( $this, 'handle_mark_report_reviewed' ) );
 	}
 
 	public function register_schedule( $schedules ) {
@@ -102,6 +104,70 @@ class AlphaWire_Projects_AI_Summary_Service {
 	}
 
 	/**
+	 * Sends an existing AI Summary draft/approved text back to Draft status
+	 * without regenerating it — a one-click "Reject" alongside "Generate /
+	 * refresh draft" (see class-ai-summary-metabox.php::render()), so an
+	 * editor doesn't have to know to flip the Status field by hand to pull
+	 * a summary back off the approval track.
+	 */
+	public function handle_reject_trigger() {
+		$project_id = isset( $_GET['project_id'] ) ? (int) $_GET['project_id'] : 0;
+
+		if ( ! $project_id
+			|| ! current_user_can( 'edit_post', $project_id )
+			|| ! check_admin_referer( 'alphawire_reject_summary_' . $project_id )
+		) {
+			wp_die( esc_html__( 'You are not authorised to do this.', 'alphawire-projects' ), 403 );
+		}
+
+		if ( function_exists( 'update_field' ) ) {
+			update_field( 'ai_summary_status', 'draft', $project_id );
+		} else {
+			update_post_meta( $project_id, 'ai_summary_status', 'draft' );
+		}
+
+		$redirect = get_edit_post_link( $project_id, 'raw' );
+		$redirect = add_query_arg( 'aw_summary', 'rejected', $redirect );
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
+	 * Marks one reported issue (class-rest-api.php::report_issue()) as
+	 * reviewed from the Project edit screen — the "Editorial review" step
+	 * of the correction workflow (Darian & Andy §11 / BE ticket §29). This
+	 * only clears it from the open list; actually fixing the summary still
+	 * goes through the existing Generate/Reject/Approve buttons above it.
+	 */
+	public function handle_mark_report_reviewed() {
+		$project_id = isset( $_GET['project_id'] ) ? (int) $_GET['project_id'] : 0;
+		$report_id  = isset( $_GET['report_id'] ) ? sanitize_text_field( wp_unslash( $_GET['report_id'] ) ) : '';
+
+		if ( ! $project_id || '' === $report_id
+			|| ! current_user_can( 'edit_post', $project_id )
+			|| ! check_admin_referer( 'alphawire_mark_report_reviewed_' . $project_id . '_' . $report_id )
+		) {
+			wp_die( esc_html__( 'You are not authorised to do this.', 'alphawire-projects' ), 403 );
+		}
+
+		$reports = get_post_meta( $project_id, 'ai_summary_reports', true );
+		$reports = is_array( $reports ) ? $reports : array();
+		foreach ( $reports as &$report ) {
+			if ( isset( $report['id'] ) && $report['id'] === $report_id ) {
+				$report['status'] = 'reviewed';
+				break;
+			}
+		}
+		unset( $report );
+		update_post_meta( $project_id, 'ai_summary_reports', $reports );
+
+		$redirect = get_edit_post_link( $project_id, 'raw' );
+		$redirect = add_query_arg( 'aw_summary', 'report_reviewed', $redirect );
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
 	 * @return true|WP_Error
 	 */
 	public function generate_draft( $project_id ) {
@@ -136,7 +202,7 @@ class AlphaWire_Projects_AI_Summary_Service {
 						// The Messages API takes the system prompt as its own
 						// top-level field — not a "system"-role message inside
 						// `messages` the way OpenAI's Chat Completions did.
-						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language.',
+						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language. Do not state specific price, market cap, or other live market figures — the page already shows live market data next to this summary, and a number written here can go stale and contradict it. Do not start the summary with a heading, a markdown symbol (#, *, -), or any other symbol — begin directly with the first word of a sentence.',
 						'messages'    => array(
 							array(
 								'role'    => 'user',
@@ -166,6 +232,39 @@ class AlphaWire_Projects_AI_Summary_Service {
 		}
 
 		$draft = trim( $body['content'][0]['text'] );
+
+		// Defensive cleanup: strip a leading markdown/symbol artifact
+		// (`#`, `*`, `-`, `>`, `•`, etc.) the model might still echo from
+		// source text, then any whitespace left behind, so the draft
+		// always starts with real sentence text rather than a stray
+		// leading symbol (see the MVP feedback item this closes).
+		$draft = ltrim( $draft, "#*->•" );
+		$draft = ltrim( $draft );
+
+		// "Where practical, previous approved versions should be retained"
+		// (Darian & Andy §11) — if there's a currently-APPROVED (i.e. live on
+		// the front end) summary about to be overwritten, snapshot it before
+		// it's gone, so a correction never silently loses the text a visitor
+		// may have just reported an issue against.
+		$previous_status = function_exists( 'get_field' ) ? get_field( 'ai_summary_status', $project_id ) : get_post_meta( $project_id, 'ai_summary_status', true );
+		if ( 'approved' === $previous_status ) {
+			$previous_text = function_exists( 'get_field' ) ? get_field( 'ai_summary_text', $project_id ) : get_post_meta( $project_id, 'ai_summary_text', true );
+			if ( $previous_text ) {
+				$history = get_post_meta( $project_id, 'ai_summary_history', true );
+				$history = is_array( $history ) ? $history : array();
+				$history[] = array(
+					'text' => $previous_text,
+					'at'   => current_time( 'mysql' ),
+				);
+				// Keep only the 5 most recent previous versions so this
+				// meta row doesn't grow unbounded on a Project that gets
+				// corrected often.
+				if ( count( $history ) > 5 ) {
+					$history = array_slice( $history, -5 );
+				}
+				update_post_meta( $project_id, 'ai_summary_history', $history );
+			}
+		}
 
 		if ( function_exists( 'update_field' ) ) {
 			update_field( 'ai_summary_text', $draft, $project_id );

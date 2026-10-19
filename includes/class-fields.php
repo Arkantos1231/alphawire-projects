@@ -138,30 +138,31 @@ class AlphaWire_Projects_Fields {
 						'ui'    => 1,
 					),
 					array(
-						'key'       => 'field_aw_related_projects',
-						'label'     => 'Related projects',
-						'name'      => 'related_projects',
-						'type'      => 'relationship',
-						'post_type' => array( AlphaWire_Projects_Post_Type::POST_TYPE ),
-						'filters'   => array( 'search' ),
+						'key'          => 'field_aw_related_projects',
+						'label'        => 'Related projects',
+						'name'         => 'related_projects',
+						'type'         => 'relationship',
+						'post_type'    => array( AlphaWire_Projects_Post_Type::POST_TYPE ),
+						'filters'      => array( 'search' ),
+						'instructions' => "Shown on this Project's Related tab, and also listed as items on its Research tab.",
 					),
 					array(
 						'key'          => 'field_aw_related_news',
-						'label'        => 'Related News',
+						'label'        => 'Research — News',
 						'name'         => 'related_news',
 						'type'         => 'relationship',
 						'post_type'    => array( 'news' ),
 						'filters'       => array( 'search' ),
-						'instructions' => 'Select News posts to show in this Project\'s AlphaWire coverage.',
+						'instructions' => 'Manually curated. Select News posts to feature on this Project\'s Research tab. This is separate from AlphaWire Coverage, which is automatic based on shared Pillar/Topic terms.',
 					),
 					array(
 						'key'          => 'field_aw_related_podcasts',
-						'label'        => 'Related Podcasts',
+						'label'        => 'Research — Podcasts',
 						'name'         => 'related_podcasts',
 						'type'         => 'relationship',
 						'post_type'    => array( 'podcast' ),
 						'filters'       => array( 'search' ),
-						'instructions' => 'Select Podcast posts to show in this Project\'s AlphaWire coverage.',
+						'instructions' => 'Manually curated. Select Podcast posts to feature on this Project\'s Research tab. This is separate from AlphaWire Coverage, which is automatic based on shared Pillar/Topic terms.',
 					),
 				),
 				'location' => array(
@@ -237,10 +238,22 @@ class AlphaWire_Projects_Fields {
 						'button_label' => 'Add milestone',
 						'sub_fields' => array(
 							array(
-								'key'   => 'field_aw_timeline_date',
-								'label' => 'Date',
-								'name'  => 'date',
-								'type'  => 'date_picker',
+								'key'            => 'field_aw_timeline_date',
+								'label'          => 'Date',
+								'name'           => 'date',
+								'type'           => 'date_picker',
+								'display_format' => 'd/m/Y',
+								// ACF's default return_format for date_picker is also
+								// 'd/m/Y' — a slash-separated string, which PHP's
+								// strtotime() (used in templates/single-project.php to
+								// render the Timeline) parses as US m/d/Y, not d/m/Y.
+								// That silently shifted dates by up to several weeks
+								// (10/09 read as Oct 9 instead of 10 Sept — the MVP
+								// feedback item this closes). 'Y-m-d' is unambiguous
+								// for strtotime() and doesn't require a data migration:
+								// ACF always stores the value as Ymd regardless of this
+								// setting, which only controls what get_field() returns.
+								'return_format'  => 'Y-m-d',
 							),
 							array(
 								'key'   => 'field_aw_timeline_title',

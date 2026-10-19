@@ -90,7 +90,13 @@ class AlphaWire_Projects_Templates {
 			'AlphaWireProjects',
 			array(
 				'restUrl' => esc_url_raw( rest_url( AlphaWire_Projects_REST::NAMESPACE ) ),
-				'nonce'   => is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '',
+				// Always created, logged-in or not: the Report Issue POST
+				// endpoint (class-rest-api.php::report_issue()) is meant to
+				// be usable by anonymous visitors — reporting an AI Summary
+				// issue is not an authenticated action — so this can no
+				// longer be the empty string for a logged-out visitor the
+				// way the read-only GET endpoints could get away with.
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			)
 		);
 	}

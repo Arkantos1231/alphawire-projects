@@ -40,6 +40,8 @@ while ( have_posts() ) :
 	<div class="aw-projects">
 
 		<nav class="aw-breadcrumb">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+			<span>/</span>
 			<a href="<?php echo esc_url( get_post_type_archive_link( AlphaWire_Projects_Post_Type::POST_TYPE ) ); ?>">Projects</a>
 			<span>/</span>
 			<span><?php echo esc_html( $project['name'] ); ?></span>
@@ -101,15 +103,15 @@ while ( have_posts() ) :
 					<?php endif; ?>
 					<div class="aw-stat-row">
 						<dt>Price</dt>
-						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+						<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?> <span class="aw-change-period">24h</span></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>Market Cap</dt>
-						<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+						<dd><?php echo esc_html( null !== ( $market['marketCapRaw'] ?? null ) ? '$' . aw_projects_compact_number( $market['marketCapRaw'] ) : ( $market['marketCap'] ?? '—' ) ); ?></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>24h Volume</dt>
-						<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+						<dd><?php echo esc_html( null !== ( $market['volume24hRaw'] ?? null ) ? '$' . aw_projects_compact_number( $market['volume24hRaw'] ) : ( $market['volume24h'] ?? '—' ) ); ?></dd>
 					</div>
 					<div class="aw-stat-row">
 						<dt>Circulating Supply</dt>
@@ -130,19 +132,52 @@ while ( have_posts() ) :
 						</div>
 					<?php endif; ?>
 				</dl>
+				<?php if ( ! empty( $market['stale'] ) ) : ?>
+					<p class="aw-stale-note">Prices shown are the last known values and may be out of date.</p>
+				<?php endif; ?>
+				<?php if ( ! empty( $market['updatedAt'] ) ) : ?>
+					<p class="aw-market-updated">Data as of <?php echo esc_html( wp_date( 'M j, Y g:ia', strtotime( $market['updatedAt'] ) ) ); ?></p>
+				<?php endif; ?>
 				<div class="aw-panel-divider"></div>
 				<span class="aw-badge">Market data · external</span>
-				<p class="aw-panel-footnote">Market data — read only, never edited by AlphaWire editorial. Launch
+				<p class="aw-panel-footnote">Market data from CoinGecko — read only, never edited by AlphaWire editorial. Launch
 					date is editorially maintained.</p>
 			</div>
 
-			<div class="aw-panel">
+			<div class="aw-panel aw-ai-summary-panel" data-aw-report-slug="<?php echo esc_attr( $project['slug'] ); ?>">
 				<div class="aw-panel-title-row">
 					<h2>AI Project Summary</h2>
 					<span class="aw-badge">Beta</span>
 				</div>
 				<?php if ( 'approved' === $project['aiSummary']['status'] && $project['aiSummary']['text'] ) : ?>
 					<p class="aw-ai-summary-text"><?php echo esc_html( $project['aiSummary']['text'] ); ?></p>
+					<?php if ( ! empty( $project['aiSummary']['updatedAt'] ) ) : ?>
+						<p class="aw-ai-summary-updated">Last updated <?php echo esc_html( wp_date( 'M j, Y', strtotime( $project['aiSummary']['updatedAt'] ) ) ); ?></p>
+					<?php endif; ?>
+					<?php
+					/*
+					 * Darian & Andy §11 explicitly calls out that "the
+					 * appropriate disclaimer and correction wording must be
+					 * agreed before launch" — this is draft copy standing in
+					 * for that sign-off, not final legal/product-approved
+					 * text. Easy to swap: it's the only hard-coded string in
+					 * this block.
+					 */
+					?>
+					<p class="aw-ai-disclaimer">
+						This summary is AI-generated from AlphaWire's own editorial content and may not be fully accurate.
+						<button type="button" class="aw-report-issue-trigger" data-aw-report-issue-trigger>Report an issue</button>
+					</p>
+					<form class="aw-report-form" data-aw-report-form hidden>
+						<label class="aw-report-label" for="aw-report-message-<?php echo esc_attr( $project['id'] ); ?>">What's wrong with this summary?</label>
+						<textarea class="aw-report-textarea" id="aw-report-message-<?php echo esc_attr( $project['id'] ); ?>" data-aw-report-message rows="3" maxlength="1000" required></textarea>
+						<input type="text" class="aw-report-hp" name="website" data-aw-report-hp tabindex="-1" autocomplete="off" aria-hidden="true" />
+						<div class="aw-report-actions">
+							<button type="submit" class="aw-report-submit" data-aw-report-submit>Submit report</button>
+							<button type="button" class="aw-report-cancel" data-aw-report-cancel>Cancel</button>
+						</div>
+						<p class="aw-report-status" data-aw-report-status role="status" aria-live="polite"></p>
+					</form>
 				<?php else : ?>
 					<div class="aw-ai-pending">
 						An AI summary is generated in the background and reviewed by an editor before it appears
@@ -221,6 +256,11 @@ while ( have_posts() ) :
 									<?php endforeach; ?>
 								</ol>
 							</div>
+						<?php else : ?>
+							<div class="aw-panel aw-empty-panel">
+								<h2>Timeline</h2>
+								<p class="aw-empty">No milestones published yet.</p>
+							</div>
 						<?php endif; ?>
 					</div>
 
@@ -236,15 +276,15 @@ while ( have_posts() ) :
 							<dl>
 								<div class="aw-stat-row">
 									<dt>Price</dt>
-									<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?></dd>
+									<dd><?php echo esc_html( $market['price'] ?? '—' ); ?> <?php aw_projects_change( $market['change24h'] ?? null ); ?> <span class="aw-change-period">24h</span></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>Market Cap</dt>
-									<dd><?php echo esc_html( $market['marketCap'] ?? '—' ); ?></dd>
+									<dd><?php echo esc_html( null !== ( $market['marketCapRaw'] ?? null ) ? '$' . aw_projects_compact_number( $market['marketCapRaw'] ) : ( $market['marketCap'] ?? '—' ) ); ?></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>24h Volume</dt>
-									<dd><?php echo esc_html( $market['volume24h'] ?? '—' ); ?></dd>
+									<dd><?php echo esc_html( null !== ( $market['volume24hRaw'] ?? null ) ? '$' . aw_projects_compact_number( $market['volume24hRaw'] ) : ( $market['volume24h'] ?? '—' ) ); ?></dd>
 								</div>
 								<div class="aw-stat-row">
 									<dt>Circulating Supply</dt>
@@ -265,7 +305,13 @@ while ( have_posts() ) :
 									</div>
 								<?php endif; ?>
 							</dl>
-							<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data — read only, never
+							<?php if ( ! empty( $market['stale'] ) ) : ?>
+								<p class="aw-stale-note">Prices shown are the last known values and may be out of date.</p>
+							<?php endif; ?>
+							<?php if ( ! empty( $market['updatedAt'] ) ) : ?>
+								<p class="aw-market-updated">Data as of <?php echo esc_html( wp_date( 'M j, Y g:ia', strtotime( $market['updatedAt'] ) ) ); ?></p>
+							<?php endif; ?>
+							<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">Market data from CoinGecko — read only, never
 								edited by AlphaWire editorial.</p>
 						</div>
 
@@ -286,7 +332,7 @@ while ( have_posts() ) :
 				<?php if ( $coverage_by_type ) : ?>
 					<section class="aw-section aw-panel aw-coverage-section" data-aw-coverage-slug="<?php echo esc_attr( $project['slug'] ); ?>" data-aw-coverage-scope="coverage">
 				<div class="aw-section-header">
-					<h2>Latest from AlphaWire</h2>
+					<h2>AlphaWire Coverage</h2>
 					<div class="aw-coverage-filters" role="group" aria-label="Filter AlphaWire coverage">
 						<button type="button" class="aw-coverage-filter is-active" data-aw-coverage-filter="all">All</button>
 						<?php foreach ( array_keys( $coverage_by_type ) as $type ) : ?>
@@ -351,13 +397,15 @@ while ( have_posts() ) :
 						</div>
 						<span class="aw-tl-badge">AlphaWire editorial</span>
 					</section>
+				<?php else : ?>
+					<p class="aw-empty">No milestones published yet.</p>
 				<?php endif; ?>
 			</div>
 			<div class="aw-profile-tab-panel" id="aw-panel-coverage" role="tabpanel" aria-labelledby="aw-tab-coverage" data-aw-profile-panel="coverage" hidden>
 				<?php if ( $coverage_by_type ) : ?>
 					<section class="aw-section aw-panel aw-coverage-section" data-aw-coverage-slug="<?php echo esc_attr( $project['slug'] ); ?>" data-aw-coverage-scope="coverage">
 						<div class="aw-section-header">
-							<h2>Latest from AlphaWire</h2>
+							<h2>AlphaWire Coverage</h2>
 							<div class="aw-coverage-filters" role="group" aria-label="Filter AlphaWire coverage">
 								<button type="button" class="aw-coverage-filter is-active" data-aw-coverage-filter="all">All</button>
 								<?php foreach ( array_keys( $coverage_by_type ) as $type ) : ?>
@@ -450,6 +498,8 @@ while ( have_posts() ) :
 							<?php endforeach; ?>
 						</div>
 					</section>
+				<?php else : ?>
+					<p class="aw-empty">No related Projects yet.</p>
 				<?php endif; ?>
 			</div>
 		</div>

@@ -44,7 +44,7 @@ class AlphaWire_Projects_Content_Relationships {
 						'type'         => 'post_object',
 						'post_type'    => array( AlphaWire_Projects_Post_Type::POST_TYPE ),
 						'allow_null'   => 1,
-						'instructions' => "If this piece is about a specific Project, select it here — it appears automatically on that Project's AlphaWire Coverage / Research tab. Don't duplicate the content inside Projects.",
+						'instructions' => "If this piece is about a specific Project, select it here. This only affects that Project's \"recently updated\" ranking — it does NOT add this piece to the Project's AlphaWire Coverage or Research tab. To feature a News or Podcast post on a Project's Research tab, add it there instead (edit the Project → Related News / Related Podcasts).",
 					),
 				),
 				'location' => $location,
@@ -145,6 +145,11 @@ class AlphaWire_Projects_Content_Relationships {
 				! $post ||
 				'publish' !== $post->post_status ||
 				AlphaWire_Projects_Post_Type::POST_TYPE !== $post->post_type ||
+				// A Project accidentally listed in its own "Related projects"
+				// field (nothing in the ACF config prevents selecting the
+				// current post) must never render on its own Research tab —
+				// the MVP feedback item this closes.
+				(int) $post->ID === (int) $project_id ||
 				isset( $seen[ $post->ID ] )
 			) {
 				continue;

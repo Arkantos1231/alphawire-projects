@@ -32,6 +32,21 @@ class AlphaWire_Projects_REST {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/projects/(?P<slug>[a-zA-Z0-9-]+)/report-issue',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'report_issue' ),
+				// Intentionally public: Darian & Andy §11 / BE ticket §29 /
+				// FE ticket §17 all describe this as a visitor-facing action
+				// ("User identifies an issue" / "Report Issue interaction"),
+				// not something gated behind login. See report_issue() for
+				// the lighter-weight anti-abuse checks used instead.
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 
 	public static function get_project( $request ) {
@@ -121,6 +136,94 @@ class AlphaWire_Projects_REST {
 			$out[] = AlphaWire_Projects_Directory_REST::card( $related_post );
 		}
 		return $out;
+	}
+
+	/**
+	 * Public step of the AI Summary correction workflow (Darian & Andy
+	 * Review §11 "AI Correction Workflow", BE ticket §29 "REPORT /
+	 * CORRECTION WORKFLOW", FE ticket §17 "Report Issue interaction") — any
+	 * visitor viewing a Project's approved AI Summary can flag it. This
+	 * never edits or republishes anything itself; it only queues the report
+	 * for an editor to review on the Project edit screen (see
+	 * class-ai-summary-metabox.php's "Reported issues" list) — same
+	 * editorial-gate rule the rest of the AI Summary workflow already
+	 * follows (nothing reaches the front end without an editor's approval).
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function report_issue( $request ) {
+		$slug = $request->get_param( 'slug' );
+		$post = get_page_by_path( $slug, OBJECT, AlphaWire_Projects_Post_Type::POST_TYPE );
+
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return new WP_Error( 'not_found', 'Project not found', array( 'status' => 404 ) );
+		}
+
+		// Lightweight anti-abuse, not authentication: an anonymous visitor
+		// reporting an issue is the expected, intended caller here. This
+		// only requires the nonce every front-end fetch() already sends
+		// (class-templates.php::enqueue_assets() now creates one
+		// unconditionally, logged in or not) so a request has to have come
+		// from a page this site actually rendered, filtering out the most
+		// naive scripted spam without requiring a login nobody is meant to
+		// need for this action.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error( 'invalid_nonce', 'Could not verify this request — please reload the page and try again.', array( 'status' => 403 ) );
+		}
+
+		// Honeypot: a field real visitors never see or fill in (hidden via
+		// CSS in assets/css/projects.css, see .aw-report-hp). A filled-in
+		// value means something submitted every field programmatically, so
+		// the report is silently dropped — the caller still sees a normal
+		// success response, which tells a scraping bot nothing about what
+		// gave it away.
+		$honeypot = $request->get_param( 'website' );
+		if ( ! empty( $honeypot ) ) {
+			return array( 'success' => true );
+		}
+
+		$message = sanitize_textarea_field( (string) $request->get_param( 'message' ) );
+		if ( mb_strlen( $message ) < 10 || mb_strlen( $message ) > 1000 ) {
+			return new WP_Error( 'invalid_message', 'Please describe the issue in 10-1000 characters.', array( 'status' => 422 ) );
+		}
+
+		// Simple per-Project/per-visitor throttle (10 min) so one person
+		// re-submitting (double click, page refresh) doesn't flood the
+		// editor's review list with duplicates of the same report.
+		$ip           = $request->get_header( 'X-Forwarded-For' );
+		$ip           = $ip ? trim( explode( ',', $ip )[0] ) : ( $_SERVER['REMOTE_ADDR'] ?? '' );
+		$throttle_key = 'aw_report_throttle_' . $post->ID . '_' . md5( $ip );
+		if ( get_transient( $throttle_key ) ) {
+			return array( 'success' => true, 'throttled' => true );
+		}
+		set_transient( $throttle_key, 1, 10 * MINUTE_IN_SECONDS );
+
+		$reports = get_post_meta( $post->ID, 'ai_summary_reports', true );
+		$reports = is_array( $reports ) ? $reports : array();
+
+		$reports[] = array(
+			'id'               => uniqid( 'rep_', true ),
+			'message'          => $message,
+			// What was actually approved/shown when this was reported — by
+			// the time an editor reviews it, generate_draft() may already
+			// have overwritten ai_summary_text (which itself gets snapshotted
+			// into ai_summary_history, see class-ai-summary-service.php), so
+			// this keeps the report tied to the exact text the visitor saw.
+			'summary_snapshot' => self::field( 'ai_summary_text', $post->ID ),
+			'created'          => current_time( 'mysql' ),
+			'status'           => 'new',
+		);
+
+		// Cap at the most recent 50 reports so this meta row can't grow
+		// unbounded under sustained abuse.
+		if ( count( $reports ) > 50 ) {
+			$reports = array_slice( $reports, -50 );
+		}
+
+		update_post_meta( $post->ID, 'ai_summary_reports', $reports );
+
+		return array( 'success' => true );
 	}
 
 	private static function field( $name, $post_id, $default = null ) {

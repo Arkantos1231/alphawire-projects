@@ -2,9 +2,131 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.3
+ * Version: 0.9.6
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.6 — Builds the "Report Issue" / AI Summary correction workflow that
+ * was in scope from the start (Darian & Andy Engineering Review §11, the
+ * [BE] ticket §29 "REPORT / CORRECTION WORKFLOW" — listed as a Backend
+ * Acceptance Criterion — and the [FE] ticket §17 "Report Issue interaction"
+ * on the AI Project Summary webpart), not a "Phase 2" nice-to-have. The
+ * only thing those specs actually called out as blocking was the
+ * disclaimer/correction wording needing sign-off before launch — this ships
+ * with reasonable draft copy standing in for that sign-off, clearly marked
+ * in code so it's easy to swap once real wording is agreed:
+ *   - class-rest-api.php: new public POST
+ *     /alphawire-projects/v1/projects/{slug}/report-issue endpoint. Any
+ *     visitor viewing a Project's approved AI Summary can flag it; this
+ *     never edits or republishes anything — it only queues the report
+ *     (Project ref + message + a snapshot of the summary text they saw) for
+ *     an editor to review in wp-admin, same editorial gate the rest of the
+ *     AI Summary workflow already uses. Lightweight anti-abuse (not auth):
+ *     requires the wp_rest nonce every front-end fetch() already sends, a
+ *     honeypot field, a 10-30-1000-char message length check, and a 10-min
+ *     per-Project/per-IP throttle.
+ *   - class-templates.php: the front-end nonce is now created unconditionally
+ *     (previously empty for logged-out visitors) — the Report Issue endpoint
+ *     needs one from anonymous visitors, who are the expected caller here.
+ *   - class-ai-summary-service.php: generate_draft() now snapshots the
+ *     current text into ai_summary_history before overwriting an APPROVED
+ *     summary ("where practical, previous approved versions should be
+ *     retained" — Darian & Andy §11), keeping the 5 most recent. New
+ *     "Mark reviewed" admin action for clearing a reported issue off the
+ *     open list once an editor has acted on it.
+ *   - class-ai-summary-metabox.php: the Project edit screen now lists open
+ *     reported issues (with a "Mark reviewed" button each) and a collapsed
+ *     "Previous approved versions" history, right below the existing
+ *     Generate/Reject buttons.
+ *   - templates/single-project.php: the AI Summary panel now shows a
+ *     disclaimer line with a "Report an issue" trigger (approved summaries
+ *     only) that reveals an inline report form.
+ *   - assets/js/projects.js: wires up the trigger/cancel/submit interactions
+ *     and the POST call, with inline success/error states — no page reload.
+ *   - assets/css/projects.css: styles for the disclaimer, the report form
+ *     and its honeypot field.
+ *
+ * v0.9.5 — Follow-up on ClickUp 869fcq5rx after Andy/Anke's reply thread on
+ * the investigation comment settled two of the items that had been left
+ * open pending a decision (item #3, Coverage vs. Research; item #14,
+ * admin/front-end naming) and confirmed a front-end ask (item #18, show
+ * when market data was last updated). No Coverage logic or stored data
+ * changed — Research (manual) and Coverage (automatic, by shared
+ * Pillar/Topic terms) already worked as two separate paths; this only
+ * fixes the copy that was describing them wrong, and renames things to
+ * actually say what they do:
+ *   - class-content-relationships.php: the content-side "Related Project"
+ *     field (on News/Podcast/Post) had instructions claiming it
+ *     automatically adds that piece to the Project's Coverage/Research —
+ *     it doesn't; it only feeds "recently updated" ranking (class-
+ *     activity.php). Instructions corrected to say so, and to point
+ *     editors at the Project's own Related News/Podcasts fields instead.
+ *   - class-fields.php: Project-side "Related News"/"Related Podcasts"
+ *     fields relabelled "Research — News"/"Research — Podcasts" so their
+ *     wp-admin label matches the Research tab they actually populate
+ *     (get_selected_coverage()), and their instructions now say explicitly
+ *     that this is manual curation, separate from automatic Coverage.
+ *     "Related projects" gets an instructions note that it feeds both the
+ *     Related tab and the Research tab's item list (pre-existing dual use,
+ *     left as-is — not a functional change).
+ *   - templates/single-project.php: the "Latest from AlphaWire" section
+ *     heading (Overview preview and the dedicated tab) renamed to
+ *     "AlphaWire Coverage" to match its own tab button's label. Key Stats
+ *     and the Overview Market panel now show "Data as of {date time}" next
+ *     to the price data (market['updatedAt'], already set by
+ *     class-market-data-service.php on every successful CoinGecko fetch,
+ *     just wasn't rendered before) — independent of the stale-data note,
+ *     so visitors can see freshness even when data isn't stale.
+ *   - assets/css/projects.css: .aw-market-updated style for the new note.
+ *
+ * Still open, no plugin action (per the same thread): item #5 (Report
+ * Issue/disclaimer, confirmed phase 2) and item #6 (schema.org type,
+ * waiting on Ronnie/Andy to supply the correct type) — tracking only, not
+ * a code task.
+ *
+ * v0.9.4 — Fixes for the SEO team's MVP staging feedback (ClickUp
+ * 869fcq5rx) that didn't need a product decision first — see that task's
+ * investigation comment for the full item-by-item verdict, including the
+ * items left open pending a product/SEO decision (same news across a
+ * category, the Report Issue button + disclaimer, the structured-data
+ * type, and the admin/front-end naming mismatch):
+ *   - class-ai-summary-service.php: the system prompt now tells Claude not
+ *     to state specific price/market-cap figures (the page already shows
+ *     live data next to the summary, so a number here could go stale and
+ *     contradict it) and not to start with a heading/markdown symbol; the
+ *     saved draft is also defensively ltrim()'d of any leading symbol.
+ *     Added a one-click "Reject" action (handle_reject_trigger(), wired up
+ *     in class-ai-summary-metabox.php) that sends a draft/approved summary
+ *     back to Draft status without regenerating it.
+ *   - class-fields.php: the Timeline date_picker field now sets
+ *     return_format => 'Y-m-d'. ACF's old default ('d/m/Y') was being fed
+ *     into strtotime() in templates/single-project.php, which reads a
+ *     slash-separated date as US m/d/Y — "10/09" (10 Sept) was rendering
+ *     as "Oct 9". No data migration needed; ACF always stores the raw
+ *     value as Ymd regardless of this setting.
+ *   - class-content-relationships.php: get_selected_coverage() now skips a
+ *     Project that lists itself in its own "Related projects" field,
+ *     instead of rendering itself on its own Research tab.
+ *   - class-directory-rest-api.php: trending()'s query now has a stable
+ *     secondary sort key (post ID) alongside trending_order, so Projects
+ *     tied on that value don't shuffle order between requests.
+ *   - templates/single-project.php: breadcrumb now includes Home; the AI
+ *     Summary panel shows its "Last updated" date (the data already
+ *     existed, just wasn't displayed); Market Cap/24h Volume now use the
+ *     existing compact-number formatter instead of a raw dollar figure;
+ *     the price-change value is labelled "24h" and the market-data
+ *     footnotes now name CoinGecko explicitly; a stale-price note is shown
+ *     next to Key Stats/Market whenever cached data has gone stale; the
+ *     Timeline and Related tabs (and the Overview Timeline preview) now
+ *     show a short empty-state message instead of a blank gap.
+ *   - templates/archive-project.php: the filtered-results heading now
+ *     names the active category/narrative (e.g. "DeFi — 6 results")
+ *     instead of just a bare count.
+ *   - assets/js/projects.js: the active profile tab is now reflected in
+ *     the URL hash (history.replaceState) and restored from it on load,
+ *     so a tab link is actually shareable/bookmarkable.
+ *   - assets/css/projects.css: the Directory sidebar now renders after
+ *     the "Projects" heading on mobile (CSS `order`), instead of above it.
  *
  * v0.9.3 — CoinGecko cadence back to every 15 min (product's call, after
  * trying 5 min in v0.9.2 — the earlier "no visitor can ever trigger a live
@@ -492,7 +614,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.3' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.6' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

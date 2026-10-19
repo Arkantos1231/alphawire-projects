@@ -45,6 +45,28 @@ $query     = $result['query'];
 $max_pages = $query ? (int) $query->max_num_pages : 1;
 
 $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
+
+// The active filter's human-readable label, if any — shown in the
+// filtered-results heading so a reader lands on "DeFi — 6 results"
+// rather than just "6 results" with no indication of which filter
+// produced them (MVP feedback item this closes). Search has no single
+// label to show, so it's left blank there.
+$active_filter_label = '';
+if ( '' !== $category ) {
+	foreach ( $sidebar_categories as $c ) {
+		if ( $c['slug'] === $category ) {
+			$active_filter_label = $c['label'];
+			break;
+		}
+	}
+} elseif ( '' !== $narrative ) {
+	foreach ( AlphaWire_Projects_Directory_REST::narratives( null ) as $n ) {
+		if ( $n['slug'] === $narrative ) {
+			$active_filter_label = $n['label'];
+			break;
+		}
+	}
+}
 ?>
 
 <div class="aw-projects aw-directory">
@@ -108,7 +130,7 @@ $sidebar_categories = AlphaWire_Projects_Directory_REST::categories( null );
 
 			<section class="aw-section">
 				<div class="aw-section-header">
-					<h2><?php echo count( $cards ); ?> result<?php echo 1 === count( $cards ) ? '' : 's'; ?></h2>
+					<h2><?php echo $active_filter_label ? esc_html( $active_filter_label ) . ' — ' : ''; ?><?php echo count( $cards ); ?> result<?php echo 1 === count( $cards ) ? '' : 's'; ?></h2>
 					<a class="aw-hint" href="<?php echo esc_url( $archive_url ); ?>">Clear filters</a>
 				</div>
 				<?php if ( $cards ) : ?>

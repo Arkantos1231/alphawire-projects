@@ -381,6 +381,151 @@ background:
   el intervalo de 5 min de v0.9.2 lo limpia y lo re-agenda a 15 min en el
   siguiente request.
 
+### v0.9.4 — Fixes de la revisión MVP de SEO en staging (lo que no dependía de una decisión)
+
+A partir de la tarea de ClickUp 869fcq5rx (feedback de 18 items del equipo
+de SEO sobre el MVP en staging), esta versión resuelve los items que
+tenían un fix de código claro, sin esperar ninguna decisión de producto.
+Quedan abiertos, a propósito, los items que sí necesitan una decisión
+(mismo news en Projects de una misma categoría, botón "Report Issue" +
+disclaimer, el tipo de structured data, y el naming distinto entre
+wp-admin y el front end) — el detalle completo de los 18 items, con su
+veredicto, está en el comentario de investigación de esa tarea.
+
+- **AI Summary** (`class-ai-summary-service.php`): el prompt de sistema
+  ahora le pide a Claude que no mencione precio/market cap específicos (la
+  página ya muestra el dato en vivo al lado, así que un número viejo en el
+  resumen puede contradecirlo) y que no arranque con un símbolo/markdown;
+  el draft guardado también se limpia (`ltrim`) de cualquier símbolo
+  sobrante al inicio. Se agregó un botón "Reject" (uno nuevo, al lado de
+  "Generate / refresh draft") que manda el summary de vuelta a Draft sin
+  tener que tocar el campo Status a mano.
+- **Fechas del Timeline** (`class-fields.php`): el campo `date_picker` del
+  Timeline ahora fija `return_format => 'Y-m-d'`. El default de ACF
+  (`d/m/Y`) se pasaba a `strtotime()` en `single-project.php`, que lee una
+  fecha con barras como m/d/Y (EE.UU.) — "10/09" (10 de septiembre) se
+  mostraba como "9 de octubre". No requiere migración de datos: ACF
+  siempre guarda el valor crudo como Ymd, este setting solo afecta lo que
+  devuelve `get_field()`.
+- **Research tab mostrándose a sí mismo** (`class-content-relationships.php`):
+  `get_selected_coverage()` ahora descarta un Project que esté listado en
+  su propio campo "Related projects", en vez de renderizarse a sí mismo.
+- **Orden de Trending inestable** (`class-directory-rest-api.php`): la
+  query de `trending()` ahora tiene un segundo criterio de orden estable
+  (ID del post) además de `trending_order`, así que un empate en ese valor
+  ya no cambia de orden entre pedidos.
+- **Project Profile** (`templates/single-project.php`): el breadcrumb
+  ahora incluye Home; el panel de AI Summary muestra su fecha "Last
+  updated" (el dato ya existía, solo no se mostraba); Market Cap y 24h
+  Volume ahora usan el formato compacto que ya existía para otras tarjetas
+  en vez de la cifra completa en dólares; el cambio de precio quedó
+  etiquetado "24h" y las notas al pie de market data ahora nombran a
+  CoinGecko explícitamente; aparece un aviso cuando el precio cacheado
+  está vencido; las tabs de Timeline y Related (y la preview de Timeline
+  en Overview) ahora muestran un mensaje corto en vez de quedar en blanco
+  cuando no hay datos.
+- **Directory** (`templates/archive-project.php`): el heading de
+  resultados filtrados ahora nombra la categoría/narrativa activa (ej.
+  "DeFi — 6 resultados") en vez de solo mostrar el conteo.
+- **Tabs compartibles** (`assets/js/projects.js`): la tab activa del
+  Project Profile ahora se refleja en el hash de la URL
+  (`history.replaceState`) y se restaura al cargar la página, así un link
+  a una tab específica es realmente compartible.
+- **Mobile Directory** (`assets/css/projects.css`): el sidebar de filtros
+  ahora se renderiza después del heading "Projects" en mobile (`order` de
+  CSS), no antes.
+
+### v0.9.5 — Seguimiento al feedback de SEO tras la respuesta de Andy/Anke (869fcq5rx)
+
+Andy y Anke respondieron en la tarea de ClickUp 869fcq5rx al comentario de
+investigación de la v0.9.4, resolviendo dos de los items que habían
+quedado abiertos esperando una decisión (item #3, Coverage vs. Research; y
+item #14, el naming distinto entre wp-admin y el front end) y confirmando
+un pedido de front end (item #18: mostrar cuándo se actualizaron los datos
+de mercado por última vez). Esta versión no cambia la lógica ni los datos
+de Coverage — Research (manual) y Coverage (automático, por Pillar/Topic
+compartidos) ya eran dos caminos separados; lo que se corrige es el texto
+que los describía mal, y el naming para que diga lo que realmente hace:
+
+- **Item #3 — texto engañoso en "Related Project"**
+  (`class-content-relationships.php`): el campo del lado del contenido
+  (News/Podcast/Post) decía en sus instrucciones que seleccionar un
+  Project ahí lo agregaba automáticamente a su Coverage/Research — eso es
+  falso, ese campo solo alimenta el ranking de "recently updated"
+  (`class-activity.php`). Las instrucciones ahora lo dicen correctamente y
+  señalan los campos correctos en el Project (Related News/Related
+  Podcasts) para curar contenido en su Research tab.
+- **Item #14 — naming admin vs. front end**: los campos del Project
+  "Related News"/"Related Podcasts" (`class-fields.php`) se renombraron a
+  "Research — News"/"Research — Podcasts" para que su label en wp-admin
+  coincida con la tab "Research" que realmente alimentan
+  (`get_selected_coverage()`), y sus instrucciones ahora aclaran que es
+  curación manual, separada de Coverage automático. "Related projects"
+  suma una nota de instrucciones aclarando que alimenta tanto la tab
+  Related como la lista de la tab Research (uso doble que ya existía, no
+  se tocó la funcionalidad). En el front end
+  (`templates/single-project.php`), el heading "Latest from AlphaWire"
+  (en la preview de Overview y en la tab dedicada) se renombró a
+  "AlphaWire Coverage" para que coincida con el label de su propia tab.
+- **Item #18 — "cuándo se actualizaron los datos de mercado"**
+  (`templates/single-project.php`): Key Stats y el panel de Market en
+  Overview ahora muestran "Data as of {fecha y hora}" junto al precio,
+  usando `market['updatedAt']` (ya lo guardaba
+  `class-market-data-service.php` en cada fetch exitoso a CoinGecko, solo
+  no se mostraba). Es independiente del aviso de "precio vencido" — se ve
+  siempre que hay un dato, no solo cuando está stale.
+  (`assets/css/projects.css`: estilo `.aw-market-updated` para la nota.)
+
+Sin acción de código, según el mismo hilo: item #5 (Report Issue/disclaimer,
+confirmado que es fase 2) e item #6 (tipo de schema.org, pendiente de que
+Ronnie/Andy indiquen el tipo correcto) — solo quedan en seguimiento.
+
+### v0.9.6 — "Report Issue" / flujo de corrección del AI Summary
+
+Esto no era un "nice to have" de fase futura: estaba en el alcance desde el
+inicio en tres documentos — el Darian & Andy Engineering Review (sección 11,
+"AI Correction Workflow"), el ticket [BE] de Sebastian (sección 29, "REPORT /
+CORRECTION WORKFLOW", listado como **Backend Acceptance Criterion**), y el
+ticket [FE] (sección 17, "Report Issue interaction" en el webpart de AI
+Project Summary). Lo único que esos documentos marcaban como bloqueante era
+que el texto del disclaimer/corrección se acordara antes de salir a
+producción — eso nunca se resolvió, así que el feature nunca se construyó.
+Esta versión lo construye completo, con un texto de disclaimer razonable
+que sirve de borrador para ese sign-off pendiente (marcado en el código para
+reemplazarlo fácilmente cuando haya copy final aprobado):
+
+- **Endpoint público** (`class-rest-api.php`): nuevo
+  `POST /alphawire-projects/v1/projects/{slug}/report-issue`. Cualquier
+  visitante que vea el AI Summary aprobado de un Project puede reportarlo.
+  No edita ni republica nada — solo encola el reporte (referencia del
+  Project + mensaje + una foto del texto que el visitante vio) para que un
+  editor lo revise en wp-admin, el mismo filtro editorial que ya usa el
+  resto del flujo de AI Summary. Protecciones livianas anti-abuso (no son
+  autenticación): requiere el nonce de `wp_rest` que el front end ya manda
+  en cada fetch, un campo honeypot, un mensaje de 10 a 1000 caracteres, y un
+  límite de un reporte cada 10 minutos por Project/IP.
+- **Nonce para visitantes anónimos** (`class-templates.php`): antes solo se
+  generaba para usuarios logueados; ahora siempre existe, porque reportar un
+  issue es una acción pensada justamente para visitantes anónimos.
+- **Versionado** (`class-ai-summary-service.php`): antes de sobrescribir un
+  summary que está en estado **Approved**, el texto anterior se guarda en
+  `ai_summary_history` (hasta 5 versiones) — "donde sea práctico, las
+  versiones aprobadas anteriores deben conservarse" (Darian & Andy §11).
+  También se agregó la acción "Mark reviewed" para sacar un reporte de la
+  lista de pendientes una vez que un editor actuó sobre él.
+- **Revisión editorial** (`class-ai-summary-metabox.php`): la pantalla de
+  edición del Project ahora muestra los reportes abiertos (con un botón
+  "Mark reviewed" cada uno) y un historial colapsado de versiones anteriores
+  aprobadas, debajo de los botones existentes de Generate/Reject.
+- **Front end** (`templates/single-project.php`): el panel de AI Summary
+  ahora muestra una línea de disclaimer con un botón "Report an issue" (solo
+  en summaries aprobados) que despliega un formulario en línea.
+- **JS** (`assets/js/projects.js`): conecta el trigger/cancel/submit del
+  formulario con el POST al endpoint nuevo, con estados de éxito/error en
+  línea, sin recargar la página.
+- **CSS** (`assets/css/projects.css`): estilos para el disclaimer, el
+  formulario de reporte y su campo honeypot.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

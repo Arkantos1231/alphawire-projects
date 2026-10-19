@@ -198,8 +198,17 @@ class AlphaWire_Projects_Directory_REST {
 			'post_status'    => 'publish',
 			'posts_per_page' => 12,
 			'meta_key'       => 'trending_order',
-			'orderby'        => 'meta_value_num',
-			'order'          => 'ASC',
+			// A plain 'meta_value_num' orderby has no deterministic
+			// tie-breaker: when two or more Projects share the same
+			// trending_order value, MySQL doesn't guarantee a stable order
+			// between requests, which is what let the Trending list's top
+			// spot visibly shuffle with no order actually changing (MVP
+			// feedback item this closes). Post ID is a secondary key that
+			// never changes, so ties now resolve the same way every time.
+			'orderby'        => array(
+				'meta_value_num' => 'ASC',
+				'ID'             => 'ASC',
+			),
 			'meta_query'     => array(
 				array(
 					'key'     => 'trending_order',

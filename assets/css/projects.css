@@ -93,6 +93,13 @@
 	white-space: nowrap;
 }
 
+.aw-change-period {
+	font-size: 10px;
+	color: var(--aw-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
 .aw-projects .aw-change.up {
 	color: var(--aw-positive);
 }
@@ -157,6 +164,15 @@
 		   viewport. */
 		grid-template-columns: minmax(0, 1fr);
 	}
+
+	/* .aw-sidebar is the first element in the DOM (it has to be, for the
+	   desktop two-column grid), so without this it rendered above the
+	   "Projects" heading on mobile once the grid collapsed to one column
+	   (MVP feedback item this closes). `order` works on grid items too,
+	   so this swaps the visual order without touching the markup. */
+	.aw-directory-main {
+		order: 1;
+	}
 }
 
 .aw-sidebar {
@@ -171,6 +187,7 @@
 @media (max-width: 860px) {
 	.aw-sidebar {
 		position: static;
+		order: 2;
 	}
 }
 
@@ -1017,6 +1034,16 @@
 	color: var(--aw-muted);
 }
 
+.aw-stale-note {
+	margin: 8px 0 0;
+	padding: 6px 10px;
+	border-radius: var(--aw-radius);
+	background: var(--aw-surface-2);
+	color: var(--aw-muted);
+	font-size: 11px;
+	line-height: 1.4;
+}
+
 .aw-ai-summary-text {
 	font-size: 12px;
 	font-weight: 300;
@@ -1024,11 +1051,135 @@
 	color: var(--aw-muted);
 }
 
+.aw-ai-summary-updated {
+	margin: 6px 0 0;
+	font-size: 10px;
+	color: var(--aw-muted);
+}
+
+.aw-market-updated {
+	margin: 6px 0 0;
+	font-size: 10px;
+	color: var(--aw-muted);
+}
+
+.aw-empty-panel .aw-empty {
+	padding: 16px 0;
+}
+
 .aw-ai-pending {
 	border: 1px dashed var(--aw-border-strong);
 	border-radius: var(--aw-radius);
 	padding: 12px;
 	font-size: 12px;
+	color: var(--aw-muted);
+}
+
+.aw-ai-disclaimer {
+	margin: 10px 0 0;
+	font-size: 10px;
+	line-height: 1.5;
+	color: var(--aw-muted);
+}
+
+.aw-report-issue-trigger {
+	background: none;
+	border: none;
+	padding: 0;
+	margin-left: 4px;
+	font-size: 10px;
+	text-decoration: underline;
+	color: var(--aw-muted);
+	cursor: pointer;
+}
+
+.aw-report-issue-trigger:hover {
+	color: var(--aw-text);
+}
+
+.aw-report-form {
+	margin-top: 10px;
+	padding: 10px;
+	border: 1px solid var(--aw-border-strong);
+	border-radius: var(--aw-radius);
+	background: var(--aw-surface-2);
+}
+
+.aw-report-label {
+	display: block;
+	font-size: 11px;
+	color: var(--aw-muted);
+	margin-bottom: 6px;
+}
+
+.aw-report-textarea {
+	width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+	font: inherit;
+	font-size: 12px;
+	padding: 8px;
+	border-radius: var(--aw-radius);
+	border: 1px solid var(--aw-border-strong);
+	background: var(--aw-surface);
+	color: var(--aw-text);
+}
+
+/* Honeypot — invisible to a real visitor, present in the DOM for a bot that
+   fills in every field programmatically (see report_issue() server-side). */
+.aw-report-hp {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.aw-report-actions {
+	margin-top: 8px;
+	display: flex;
+	gap: 8px;
+}
+
+.aw-report-submit,
+.aw-report-cancel {
+	font-size: 11px;
+	padding: 6px 12px;
+	border-radius: var(--aw-radius);
+	cursor: pointer;
+}
+
+.aw-report-submit {
+	border: none;
+	background: var(--aw-accent);
+	color: #14161a;
+	font-weight: 600;
+}
+
+.aw-report-submit:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.aw-report-cancel {
+	border: 1px solid var(--aw-border-strong);
+	background: transparent;
+	color: var(--aw-muted);
+}
+
+.aw-report-status {
+	margin: 8px 0 0;
+	font-size: 11px;
+	color: var(--aw-muted);
+}
+
+.aw-report-status.is-error {
+	color: var(--aw-negative);
+}
+
+.aw-report-success {
+	margin: 10px 0 0;
+	font-size: 11px;
 	color: var(--aw-muted);
 }
 
