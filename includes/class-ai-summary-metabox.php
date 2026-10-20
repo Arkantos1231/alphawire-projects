@@ -78,11 +78,11 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 			'alphawire_generate_summary_' . $post->ID
 		);
 
-		// "Reject" — sends an existing draft/approved summary back to
-		// Draft without regenerating it, so rejecting doesn't require
-		// knowing to flip the Status field by hand (the MVP feedback item
-		// this closes). Only shown when there's actually something to
-		// reject.
+		// "Reject" — sends an existing draft/approved summary to its own
+		// "Rejected" status without regenerating it, so rejecting doesn't
+		// require knowing to flip the Status field by hand (the MVP
+		// feedback item this closes). Only shown when there's actually
+		// something to reject.
 		$reject_url = wp_nonce_url(
 			add_query_arg(
 				array(
@@ -99,8 +99,8 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 				<?php esc_html_e( 'Generate / refresh draft', 'alphawire-projects' ); ?>
 			</a>
 			<?php if ( in_array( $status, array( 'pending', 'approved' ), true ) ) : ?>
-				<a href="<?php echo esc_url( $reject_url ); ?>" class="button button-link-delete" onclick="return confirm('<?php echo esc_js( __( 'Send this summary back to Draft? The text stays, but it will stop showing as Pending/Approved until it\'s regenerated or re-approved.', 'alphawire-projects' ) ); ?>');">
-					<?php esc_html_e( 'Reject (send back to Draft)', 'alphawire-projects' ); ?>
+				<a href="<?php echo esc_url( $reject_url ); ?>" class="button button-link-delete" onclick="return confirm('<?php echo esc_js( __( 'Mark this summary as Rejected? The text stays, but it will stop showing as Pending/Approved until it\'s regenerated or re-approved.', 'alphawire-projects' ) ); ?>');">
+					<?php esc_html_e( 'Reject', 'alphawire-projects' ); ?>
 				</a>
 			<?php endif; ?>
 		</p>
@@ -202,7 +202,7 @@ class AlphaWire_Projects_AI_Summary_Metabox {
 		if ( 'success' === $_GET['aw_summary'] ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'AI summary draft generated — review it below before approving.', 'alphawire-projects' ) . '</p></div>';
 		} elseif ( 'rejected' === $_GET['aw_summary'] ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Summary sent back to Draft.', 'alphawire-projects' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Summary marked as Rejected.', 'alphawire-projects' ) . '</p></div>';
 		} elseif ( 'report_reviewed' === $_GET['aw_summary'] ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Report marked as reviewed.', 'alphawire-projects' ) . '</p></div>';
 		} else {

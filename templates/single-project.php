@@ -158,14 +158,15 @@ while ( have_posts() ) :
 					/*
 					 * Darian & Andy §11 explicitly calls out that "the
 					 * appropriate disclaimer and correction wording must be
-					 * agreed before launch" — this is draft copy standing in
-					 * for that sign-off, not final legal/product-approved
-					 * text. Easy to swap: it's the only hard-coded string in
-					 * this block.
+					 * agreed before launch". Rather than a hard-coded string,
+					 * this reads from Projects → Settings (class-settings.php
+					 * OPTION_AI_DISCLAIMER) — the placeholder default there
+					 * stands in until Product/Editorial sign off on real
+					 * wording, and swapping it then needs no release.
 					 */
 					?>
 					<p class="aw-ai-disclaimer">
-						This summary is AI-generated from AlphaWire's own editorial content and may not be fully accurate.
+						<?php echo esc_html( AlphaWire_Projects_Settings::get_ai_disclaimer() ); ?>
 						<button type="button" class="aw-report-issue-trigger" data-aw-report-issue-trigger>Report an issue</button>
 					</p>
 					<form class="aw-report-form" data-aw-report-form hidden>

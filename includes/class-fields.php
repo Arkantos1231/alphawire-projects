@@ -193,6 +193,7 @@ class AlphaWire_Projects_Fields {
 							'draft'    => 'Draft',
 							'pending'  => 'Pending Review',
 							'approved' => 'Approved / Published',
+							'rejected' => 'Rejected',
 						),
 						'default_value' => 'draft',
 						'instructions'  => 'Mirrors the Market Summaries AI workflow already in production: only "Approved" is ever shown on the public profile.',

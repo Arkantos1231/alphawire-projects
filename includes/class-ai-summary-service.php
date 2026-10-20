@@ -104,11 +104,14 @@ class AlphaWire_Projects_AI_Summary_Service {
 	}
 
 	/**
-	 * Sends an existing AI Summary draft/approved text back to Draft status
-	 * without regenerating it — a one-click "Reject" alongside "Generate /
-	 * refresh draft" (see class-ai-summary-metabox.php::render()), so an
+	 * Sends an existing AI Summary draft/approved text to its own
+	 * "Rejected" status (a one-click "Reject" alongside "Generate /
+	 * refresh draft", see class-ai-summary-metabox.php::render()) so an
 	 * editor doesn't have to know to flip the Status field by hand to pull
-	 * a summary back off the approval track.
+	 * a summary back off the approval track. A dedicated status (rather
+	 * than reusing "Draft") keeps "never generated yet" and "an editor
+	 * actively rejected this" distinguishable in wp-admin — see the
+	 * 'rejected' choice on the ai_summary_status field in class-fields.php.
 	 */
 	public function handle_reject_trigger() {
 		$project_id = isset( $_GET['project_id'] ) ? (int) $_GET['project_id'] : 0;
@@ -121,9 +124,9 @@ class AlphaWire_Projects_AI_Summary_Service {
 		}
 
 		if ( function_exists( 'update_field' ) ) {
-			update_field( 'ai_summary_status', 'draft', $project_id );
+			update_field( 'ai_summary_status', 'rejected', $project_id );
 		} else {
-			update_post_meta( $project_id, 'ai_summary_status', 'draft' );
+			update_post_meta( $project_id, 'ai_summary_status', 'rejected' );
 		}
 
 		$redirect = get_edit_post_link( $project_id, 'raw' );
@@ -202,7 +205,7 @@ class AlphaWire_Projects_AI_Summary_Service {
 						// The Messages API takes the system prompt as its own
 						// top-level field — not a "system"-role message inside
 						// `messages` the way OpenAI's Chat Completions did.
-						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. 3-4 sentences, present tense, neutral analytical tone, no marketing language. Do not state specific price, market cap, or other live market figures — the page already shows live market data next to this summary, and a number written here can go stale and contradict it. Do not start the summary with a heading, a markdown symbol (#, *, -), or any other symbol — begin directly with the first word of a sentence.',
+						'system'      => 'You write short, factual crypto-project summaries for AlphaWire. Use ONLY the information given to you — never invent facts, figures, or events. Never mention prices, price levels, market capitalisation, trading volume, percentage moves or any other market figure, even if the source material contains them — the page already shows live market data next to this summary, and a number written here can go stale and contradict it. Describe what the project is, what it does and recent milestones. 3-4 sentences, present tense, neutral analytical tone, no marketing language. Output plain prose only: no title, no heading, no Markdown, no bullet points.',
 						'messages'    => array(
 							array(
 								'role'    => 'user',
@@ -231,15 +234,15 @@ class AlphaWire_Projects_AI_Summary_Service {
 			return new WP_Error( 'claude_error', $message );
 		}
 
-		$draft = trim( $body['content'][0]['text'] );
-
-		// Defensive cleanup: strip a leading markdown/symbol artifact
-		// (`#`, `*`, `-`, `>`, `•`, etc.) the model might still echo from
-		// source text, then any whitespace left behind, so the draft
-		// always starts with real sentence text rather than a stray
-		// leading symbol (see the MVP feedback item this closes).
-		$draft = ltrim( $draft, "#*->•" );
-		$draft = ltrim( $draft );
+		// Belt-and-braces for the "plain prose only" instruction: strips any
+		// Markdown the model still emits anywhere in the text (a leading
+		// "# Title" line, **bold**, list markers, stray backticks) rather
+		// than just a leading symbol, so a stray `#`/`*` mid-sentence gets
+		// cleaned too (see the MVP feedback item this closes). The same
+		// method also runs at read time (class-rest-api.php::ai_summary())
+		// so an already-approved summary with a leftover symbol gets fixed
+		// the next time it's shown, without needing a manual regenerate.
+		$draft = self::clean_summary_text( $body['content'][0]['text'] );
 
 		// "Where practical, previous approved versions should be retained"
 		// (Darian & Andy §11) — if there's a currently-APPROVED (i.e. live on
@@ -338,6 +341,37 @@ class AlphaWire_Projects_AI_Summary_Service {
 		}
 
 		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Belt-and-braces for the "plain prose only" instruction: strips any
+	 * Markdown the model still emits (a leading "# Title" line, **bold**,
+	 * list markers) so nothing renders as a literal symbol on the page.
+	 * Public/static so class-rest-api.php::ai_summary() can also run it
+	 * retroactively over an already-approved summary at read time.
+	 */
+	public static function clean_summary_text( $text ) {
+		$text  = str_replace( array( "\r\n", "\r" ), "\n", (string) $text );
+		$lines = array();
+		foreach ( explode( "\n", $text ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			// A heading line on its own is a title, not part of the summary.
+			if ( preg_match( '/^#{1,6}\s/', $line ) ) {
+				continue;
+			}
+			$line    = preg_replace( '/^(?:[-*+]|\d+[.)])\s+/', '', $line );
+			$line    = preg_replace( '/^#+\s*/', '', $line );
+			$lines[] = $line;
+		}
+		$text = implode( ' ', $lines );
+		$text = preg_replace( '/(\*\*|__)(.+?)\1/', '$2', $text );
+		$text = preg_replace( '/(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])/', '$1', $text );
+		$text = str_replace( '`', '', $text );
+
+		return trim( preg_replace( '/\s{2,}/', ' ', $text ) );
 	}
 
 	/**

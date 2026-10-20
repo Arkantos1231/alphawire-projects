@@ -526,6 +526,41 @@ reemplazarlo fácilmente cuando haya copy final aprobado):
 - **CSS** (`assets/css/projects.css`): estilos para el disclaimer, el
   formulario de reporte y su campo honeypot.
 
+### v0.9.7 — Reconciliación con el commit `bb9a40b` de GitHub
+
+El 7 de octubre, otra sesión de Claude (independiente de esta, modelo
+"Opus 5.5") subió a `main` su propio pase sobre la misma lista de 18 ítems
+del feedback de SEO, sin que esta rama lo supiera — ambas ramas venían del
+mismo commit base (`3267043`, v0.9.3), así que varios ítems quedaron
+arreglados dos veces, de formas distintas e incompatibles entre sí. Esta
+versión reconcilia ambos lados, ítem por ítem, en vez de descartar uno
+completo:
+
+- **De esa otra rama, se incorpora:** #1 (la limpieza de Markdown del AI
+  Summary ahora es más robusta — limpia todo el texto, no solo el inicio, y
+  también se aplica retroactivamente a summaries ya aprobados), #6 (fix de
+  schema.org — `Thing` en vez de `Organization`, sin figuras de mercado que
+  se desactualizan), #13 (el fix real del bug de Trending — antes el
+  `meta_query` con `EXISTS` hacía que TODOS los Projects calificaran como
+  Trending; ahora solo los que tienen un valor real seteado), y del Report
+  Issue (#5): disclaimer configurable desde Projects → Settings en vez de
+  hardcodeado, y un email de aviso además del listado en wp-admin.
+- **De esta rama, se mantiene** (no se revirtió nada): #3/#4 — Coverage
+  sigue siendo automático por taxonomía (pillar/topic), no por un campo
+  manual de "Related Project" — confirmado contra el hilo de Andy/Anke en
+  la tarea de ClickUp 869fcq5rx (posterior al commit del 7 de oct), donde
+  Andy pidió explícitamente mantenerlo automático. También se mantiene la
+  verificación de nonce y el historial de versiones (`ai_summary_history`)
+  del Report Issue, que la otra rama no tenía.
+- **#15 (Reject)**: ambas ramas habían registrado el mismo action hook
+  `admin_post_alphawire_projects_reject_summary` en clases distintas con
+  semántica distinta — quedó consolidado en una sola implementación
+  (`class-ai-summary-service.php`), ahora con un status `rejected` propio
+  en vez de reusar `draft`.
+- **#16 (mobile)**: se adoptó el layout de la otra rama (heading → filtros
+  → resultados, vía `display:contents` en `.aw-directory-main`), que no
+  deja los filtros varados debajo de todos los resultados.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

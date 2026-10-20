@@ -114,9 +114,21 @@ class AlphaWire_Projects_REST {
 	 */
 	private static function ai_summary( $project_id ) {
 		$status = self::field( 'ai_summary_status', $project_id );
+		$text   = 'approved' === $status ? self::field( 'ai_summary_text', $project_id ) : null;
+
+		// Run the same Markdown/symbol cleanup generate_draft() applies to
+		// a new draft against whatever is already stored, at read time —
+		// so an older approved summary that still has a stray `#`/`**` in
+		// it (saved before this cleanup existed, or before it covered the
+		// whole text rather than just a leading symbol) gets fixed the
+		// next time it's shown, without needing a manual regenerate.
+		if ( $text && class_exists( 'AlphaWire_Projects_AI_Summary_Service' ) ) {
+			$text = AlphaWire_Projects_AI_Summary_Service::clean_summary_text( $text );
+		}
+
 		return array(
 			'status'    => $status,
-			'text'      => 'approved' === $status ? self::field( 'ai_summary_text', $project_id ) : null,
+			'text'      => $text,
 			'updatedAt' => self::field( 'ai_summary_updated', $project_id ),
 		);
 	}
@@ -222,6 +234,22 @@ class AlphaWire_Projects_REST {
 		}
 
 		update_post_meta( $post->ID, 'ai_summary_reports', $reports );
+
+		// Also emails whoever's configured in Settings (defaults to the
+		// site admin email) so a report doesn't just sit unseen in
+		// wp-admin until someone happens to open this Project — the list
+		// in class-ai-summary-metabox.php stays the system of record either
+		// way (an email never includes the full report list, only this one).
+		wp_mail(
+			AlphaWire_Projects_Settings::get_report_email(),
+			sprintf( '[AlphaWire Projects] Summary issue reported: %s', get_the_title( $post ) ),
+			sprintf(
+				"A reader reported an issue with the AI Project Summary for %s.\n\nReport:\n%s\n\nReview it here:\n%s",
+				get_the_title( $post ),
+				$message,
+				admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
+			)
+		);
 
 		return array( 'success' => true );
 	}

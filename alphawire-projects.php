@@ -2,9 +2,54 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.6
+ * Version: 0.9.7
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.7 — Reconciles this branch with the independent v0.9.4 fix pass
+ * (commit bb9a40b) that landed on GitHub main on Oct 7 while this branch's
+ * own v0.9.4-v0.9.6 work was in progress — both passed over the same
+ * 18-item SEO staging feedback list without either knowing about the
+ * other's commits, so several items were fixed twice, differently. Kept
+ * from that other pass, on top of this branch's existing fixes:
+ *   - #1 (summary cleanup): class-ai-summary-service.php's
+ *     clean_summary_text() now strips Markdown/symbols from the WHOLE
+ *     text (not just a leading character) and is also applied at read
+ *     time in class-rest-api.php::ai_summary(), so an older already-
+ *     approved summary gets cleaned up without needing a regenerate.
+ *   - #6 (schema.org): class-schema.php now emits '@type' => 'Thing' with
+ *     the ticker as an `identifier`, and no longer states point-in-time
+ *     market figures — a token is not an Organization, and cached prices
+ *     go stale.
+ *   - #13 (Trending): class-directory-rest-api.php::trending() fixes the
+ *     actual root cause — ACF saves an empty Trending order as '' rather
+ *     than deleting it, so the old 'EXISTS' meta_query matched every
+ *     Project. Only Projects with a real value set are Trending now.
+ *   - #5 (Report Issue): the disclaimer under the AI Summary is now
+ *     configurable from Projects → Settings instead of hard-coded
+ *     (class-settings.php OPTION_AI_DISCLAIMER), and a report also emails
+ *     a configurable address (OPTION_REPORT_EMAIL, defaults to the site
+ *     admin) in addition to the existing "Reported issues" admin list —
+ *     on top of, not instead of, this branch's own nonce verification and
+ *     ai_summary_history version retention, which the other pass didn't
+ *     have.
+ *   - #15 (Reject): consolidated to one implementation
+ *     (class-ai-summary-service.php::handle_reject_trigger(), hooked once)
+ *     using a dedicated 'rejected' status (added to the ai_summary_status
+ *     choices in class-fields.php) instead of reusing 'draft', so "never
+ *     generated yet" and "an editor rejected this" stay distinguishable.
+ *   - #16 (mobile layout): assets/css/projects.css now reorders
+ *     .aw-directory-main's own children individually (heading, then
+ *     filters, then results) via display:contents, instead of moving the
+ *     whole main block (heading + results together) below the sidebar —
+ *     which left filters stranded under every result card on mobile.
+ *
+ * Decided IN FAVOUR of this branch's own existing approach over the other
+ * pass's (not reverted) for #3/#4 (Coverage/Research): kept automatic
+ * taxonomy-based Coverage matching rather than switching to a manual
+ * "Related Project" field — confirmed against ClickUp 869fcq5rx's
+ * Andy/Anke reply thread (dated after the other pass's Oct 7 commit),
+ * where Andy explicitly asked for Coverage to stay automated.
  *
  * v0.9.6 — Builds the "Report Issue" / AI Summary correction workflow that
  * was in scope from the start (Darian & Andy Engineering Review §11, the
@@ -614,7 +659,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.6' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.7' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

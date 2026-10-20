@@ -165,14 +165,6 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	/* .aw-sidebar is the first element in the DOM (it has to be, for the
-	   desktop two-column grid), so without this it rendered above the
-	   "Projects" heading on mobile once the grid collapsed to one column
-	   (MVP feedback item this closes). `order` works on grid items too,
-	   so this swaps the visual order without touching the markup. */
-	.aw-directory-main {
-		order: 1;
-	}
 }
 
 .aw-sidebar {
@@ -187,7 +179,34 @@
 @media (max-width: 860px) {
 	.aw-sidebar {
 		position: static;
+	}
+}
+
+/* .aw-sidebar is the first element in the DOM (it has to be, for the
+   desktop two-column grid), so without this it rendered above the
+   "Projects" heading on mobile once the grid collapsed to one column
+   (MVP feedback item this closes). Reordering just .aw-directory-main as a
+   whole would also drag its own children (the heading AND the results
+   grid) above the sidebar together, leaving filters stranded below every
+   result card — so instead .aw-directory-main is flattened with
+   display:contents and its own children are re-ordered individually as
+   direct grid items: heading, then filters, then results. */
+@media (max-width: 860px) {
+	.aw-directory .aw-directory-main {
+		display: contents;
+	}
+
+	.aw-directory .aw-directory-main > * {
 		order: 2;
+		min-width: 0;
+	}
+
+	.aw-directory .aw-directory-main > .aw-directory-head {
+		order: 0;
+	}
+
+	.aw-directory .aw-sidebar {
+		order: 1;
 	}
 }
 
