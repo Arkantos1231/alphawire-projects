@@ -58,7 +58,28 @@ while ( have_posts() ) :
 					<h1>
 						<?php echo esc_html( $project['name'] ); ?>
 						<?php if ( $project['verified'] ) : ?>
-							<span class="aw-verified" title="Verified project">✓</span>
+							<?php
+							/**
+							 * ClickUp 1amdve27n1c: replaces the plain "✓"
+							 * character with Tabler's circle-check icon
+							 * (https://tabler.io/icons?icon=circle-check),
+							 * fetched from Tabler's own rendered markup so the
+							 * path data is exact — outline style, 24x24 grid,
+							 * 2px stroke, as the icon ships. The icon already
+							 * draws its own ring, so the old wrapper
+							 * border/border-radius that drew a second circle
+							 * around the "✓" character is gone from
+							 * .aw-verified in projects.css; only size/colour
+							 * stay.
+							 */
+							?>
+							<span class="aw-verified" title="Verified project">
+								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+									<path d="M9 12l2 2l4 -4" />
+								</svg>
+							</span>
 						<?php endif; ?>
 					</h1>
 					<div class="aw-ticker-row">
@@ -69,13 +90,19 @@ while ( have_posts() ) :
 					<?php if ( $project['description'] ) : ?>
 						<p class="aw-desc"><?php echo esc_html( wp_strip_all_tags( $project['description'] ) ); ?></p>
 					<?php endif; ?>
-					<?php if ( ! empty( $project['narratives'] ) ) : ?>
-						<div class="aw-chip-row">
-							<?php foreach ( $project['narratives'] as $n ) : ?>
-								<span class="aw-chip"><?php echo esc_html( $n ); ?></span>
-							<?php endforeach; ?>
-						</div>
-					<?php endif; ?>
+					<?php
+					/**
+					 * ClickUp 1amdve27n8r: this narrative chip row used to sit
+					 * here, directly under the description and above the
+					 * external links — exactly the "redundant category tag"
+					 * the ticket's screenshot circles. Removed from the
+					 * header only; the same narratives still show on every
+					 * Project page in the Overview tab's "Top Narratives"
+					 * panel (see further down this file), and still drive
+					 * Directory filtering — this was purely the duplicate,
+					 * not the only place the data lives.
+					 */
+					?>
 					<?php if ( ! empty( $project['links'] ) ) : ?>
 						<div class="aw-link-row">
 							<?php foreach ( $project['links'] as $link ) : ?>
@@ -170,7 +197,10 @@ while ( have_posts() ) :
 						<button type="button" class="aw-report-issue-trigger" data-aw-report-issue-trigger>Report an issue</button>
 					</p>
 					<form class="aw-report-form" data-aw-report-form hidden>
-						<label class="aw-report-label" for="aw-report-message-<?php echo esc_attr( $project['id'] ); ?>">What's wrong with this summary?</label>
+						<div class="aw-report-form-head">
+							<label class="aw-report-label" for="aw-report-message-<?php echo esc_attr( $project['id'] ); ?>">What's wrong with this summary?</label>
+							<button type="button" class="aw-report-close" data-aw-report-close aria-label="Close — don't submit a report">Close</button>
+						</div>
 						<textarea class="aw-report-textarea" id="aw-report-message-<?php echo esc_attr( $project['id'] ); ?>" data-aw-report-message rows="3" maxlength="1000" required></textarea>
 						<input type="text" class="aw-report-hp" name="website" data-aw-report-hp tabindex="-1" autocomplete="off" aria-hidden="true" />
 						<div class="aw-report-actions">
@@ -324,6 +354,105 @@ while ( have_posts() ) :
 										<span><span class="aw-narrative-flame" aria-hidden="true">🔥</span> <?php echo esc_html( $n ); ?></span>
 									</div>
 								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+
+						<?php
+						/**
+						 * Smart Money (Nansen) — ClickUp 1amdve27ccr "Build
+						 * Nansen UI Blocks for AlphaWire Projects". null from
+						 * build_payload() means "don't render this panel at
+						 * all" (integration disabled, or this Project has no
+						 * Nansen chain/token mapped) — same convention as
+						 * every other optional panel on this page.
+						 *
+						 * Admin-only demo preview: appending ?aw_nansen_demo=1
+						 * to a Project URL shows the panel with placeholder
+						 * numbers even when nothing is really mapped yet, so
+						 * stakeholders can review the design before real
+						 * Nansen access/legal sign-off lands (explicitly
+						 * allowed by the parent ticket: "Development can
+						 * begin on the frontend UI using placeholder data").
+						 * Gated on manage_options — never shown to a visitor,
+						 * never reads real data, never calls Nansen.
+						 */
+						$smart_money    = $project['smartMoney'];
+						$aw_sm_is_demo  = false;
+						if ( null === $smart_money && current_user_can( 'manage_options' ) && isset( $_GET['aw_nansen_demo'] ) ) {
+							$aw_sm_is_demo = true;
+							$smart_money   = array(
+								'netflowUsd24h' => 1250000,
+								'holdersCount'  => 4821,
+								'blurb'         => 'Smart Money wallets added a net $1.25M in exposure over the last 24 hours.',
+								'updatedAt'     => current_time( 'mysql' ),
+								'stale'         => false,
+								'chain'         => 'ethereum',
+							);
+						}
+						?>
+						<?php if ( null !== $smart_money ) : ?>
+							<div class="aw-panel aw-smart-money-panel<?php echo $aw_sm_is_demo ? ' aw-smart-money-demo' : ''; ?>">
+								<div class="aw-panel-title-row">
+									<h2>Smart Money</h2>
+									<?php if ( $aw_sm_is_demo ) : ?>
+										<span class="aw-badge aw-badge-demo">Demo preview — admin only</span>
+									<?php elseif ( ! empty( $smart_money['stale'] ) ) : ?>
+										<span class="aw-badge">last known data</span>
+									<?php else : ?>
+										<span class="aw-badge">Nansen · beta</span>
+									<?php endif; ?>
+								</div>
+
+								<?php if ( null === $smart_money['netflowUsd24h'] && null === $smart_money['holdersCount'] ) : ?>
+									<div class="aw-empty-panel">
+										<p class="aw-empty">Smart Money data for this project hasn't synced yet — check back within the hour.</p>
+									</div>
+								<?php else : ?>
+									<dl>
+										<div class="aw-stat-row">
+											<dt>24h Net Flow</dt>
+											<dd>
+												<?php if ( null !== $smart_money['netflowUsd24h'] ) : ?>
+													<?php
+													$aw_flow       = (float) $smart_money['netflowUsd24h'];
+													$aw_flow_class = $aw_flow > 0 ? 'aw-flow-positive' : ( $aw_flow < 0 ? 'aw-flow-negative' : '' );
+													?>
+													<span class="<?php echo esc_attr( $aw_flow_class ); ?>"><?php echo esc_html( ( $aw_flow >= 0 ? '+' : '-' ) . '$' . aw_projects_compact_number( abs( $aw_flow ) ) ); ?></span>
+												<?php else : ?>
+													—
+												<?php endif; ?>
+											</dd>
+										</div>
+										<div class="aw-stat-row">
+											<dt>Holders</dt>
+											<dd><?php echo esc_html( null !== $smart_money['holdersCount'] ? number_format_i18n( $smart_money['holdersCount'] ) : '—' ); ?></dd>
+										</div>
+										<?php if ( ! empty( $smart_money['chain'] ) ) : ?>
+											<div class="aw-stat-row">
+												<dt>Chain</dt>
+												<dd><?php echo esc_html( ucfirst( $smart_money['chain'] ) ); ?></dd>
+											</div>
+										<?php endif; ?>
+									</dl>
+									<?php if ( ! empty( $smart_money['blurb'] ) ) : ?>
+										<p class="aw-smart-money-blurb"><?php echo esc_html( $smart_money['blurb'] ); ?></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $smart_money['stale'] ) && ! $aw_sm_is_demo ) : ?>
+										<p class="aw-stale-note">Smart Money data shown is the last known value and may be out of date.</p>
+									<?php endif; ?>
+									<?php if ( ! empty( $smart_money['updatedAt'] ) ) : ?>
+										<p class="aw-market-updated">Data as of <?php echo esc_html( wp_date( 'M j, Y g:ia', strtotime( $smart_money['updatedAt'] ) ) ); ?></p>
+									<?php endif; ?>
+								<?php endif; ?>
+
+								<p style="font-size:10px;color:var(--aw-muted);margin-top:10px;">
+									Smart Money activity data from
+									<a href="https://www.nansen.ai/" target="_blank" rel="noreferrer noopener">Nansen</a>
+									— read only, never edited by AlphaWire editorial. Experimental feature.
+									<?php if ( $aw_sm_is_demo ) : ?>
+										Showing placeholder numbers for design review only — visible to admins via <code>?aw_nansen_demo=1</code>, never served to visitors.
+									<?php endif; ?>
+								</p>
 							</div>
 						<?php endif; ?>
 					</div>

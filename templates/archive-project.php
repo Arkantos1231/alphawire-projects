@@ -76,16 +76,16 @@ if ( '' !== $category ) {
 			<div class="aw-sidebar-heading">Explore</div>
 			<div class="aw-nav-scroll">
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'all' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( $archive_url ); ?>">
-					<span class="aw-nav-icon" aria-hidden="true">◎</span> All Projects
+					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'layout-grid' ); ?></span> All Projects
 				</a>
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'trending' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'trending', $archive_url ) ); ?>">
-					<span class="aw-nav-icon" aria-hidden="true">⚡</span> Trending
+					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'bolt' ); ?></span> Trending
 				</a>
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-updated' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-updated', $archive_url ) ); ?>">
-					<span class="aw-nav-icon" aria-hidden="true">↻</span> Recently Updated
+					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'refresh' ); ?></span> Recently Updated
 				</a>
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-launched' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-launched', $archive_url ) ); ?>">
-					<span class="aw-nav-icon" aria-hidden="true">✦</span> Recently Launched
+					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'sparkles' ); ?></span> Recently Launched
 				</a>
 			</div>
 		</div>
@@ -122,7 +122,7 @@ if ( '' !== $category ) {
 				<?php if ( '' !== $narrative ) : ?>
 					<input type="hidden" name="narrative" value="<?php echo esc_attr( $narrative ); ?>" />
 				<?php endif; ?>
-				<button type="submit" aria-label="Search">⌕</button>
+				<button type="submit" aria-label="Search"><?php aw_projects_icon( 'search' ); ?></button>
 			</form>
 		</div>
 

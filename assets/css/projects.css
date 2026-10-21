@@ -226,6 +226,7 @@
 	justify-content: space-between;
 	gap: 8px;
 	padding: 8px 10px;
+	border: 1px solid transparent;
 	border-radius: var(--aw-radius);
 	font-size: 13px;
 	color: var(--aw-text);
@@ -235,18 +236,40 @@
 	background: var(--aw-surface);
 }
 
+/* ClickUp 1amdve27muy: the selected category needs to read as selected on
+   its own, not just a slightly different shade of the hover background —
+   so this now gets its own accent outline + tinted fill on top of the
+   existing accent text/bold, and stays accent-colored even while hovered
+   (persistent, not just "currently moused over"). */
 .aw-nav-item.is-active {
-	background: var(--aw-surface);
+	background: rgba(200, 243, 35, 0.08);
+	border-color: var(--aw-accent);
 	color: var(--aw-accent);
 	font-weight: 600;
 }
 
+.aw-nav-item.is-active:hover {
+	background: rgba(200, 243, 35, 0.14);
+}
+
+/* ClickUp 1amdve27n1r: was a 16px text-align:center box around a unicode
+   glyph (◎ ⚡ ↻ ✦) of inconsistent visual weight; now wraps a real 24px
+   Tabler <svg> (aw_projects_icon()), so this centres a fixed-size icon
+   instead of varying glyph metrics. */
 .aw-nav-icon {
-	display: inline-block;
-	width: 16px;
-	text-align: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
 	margin-right: 6px;
 	opacity: 0.85;
+	flex: 0 0 auto;
+}
+
+.aw-nav-icon .aw-icon {
+	width: 100%;
+	height: 100%;
 }
 
 @media (max-width: 600px) {
@@ -277,6 +300,16 @@
 		justify-content: center;
 		white-space: nowrap;
 		background: var(--aw-surface);
+	}
+
+	/* Higher specificity than the blanket rule above (3 classes vs 2) so
+	   the selected pill keeps its own accent outline/fill instead of being
+	   flattened to the same grey as every other pill — this was the actual
+	   mobile bug 1amdve27muy's screenshot shows: on the horizontal strip,
+	   the "selected" pill had nothing but text colour telling it apart. */
+	.aw-nav-scroll .aw-nav-item.is-active {
+		background: rgba(200, 243, 35, 0.12);
+		border-color: var(--aw-accent);
 	}
 
 	.aw-nav-scroll .aw-nav-icon {
@@ -330,6 +363,12 @@
 	outline: none;
 }
 
+/* ClickUp 1amdve27n1r: the "⌕" glyph had no explicit size of its own
+   (inherited body font-size, nowhere near the other icons' sizing); now
+   it's the same 24px Tabler <svg> as the nav icons (aw_projects_icon()),
+   consistently sized per the ticket — the round button grew from 28px to
+   40px to give a 24px icon proper breathing room instead of nearly
+   filling the circle edge-to-edge. */
 .aw-searchbar button {
 	display: flex;
 	align-items: center;
@@ -338,12 +377,11 @@
 	border: none;
 	color: var(--aw-muted);
 	border-radius: 50%;
-	width: 28px;
-	height: 28px;
+	width: 40px;
+	height: 40px;
 	padding: 0;
 	line-height: 1;
 	cursor: pointer;
-	font-size: 14px;
 }
 
 /* Overrides the theme's global button:hover/:focus pink (#CC3366) fill. */
@@ -929,16 +967,19 @@
 	letter-spacing: -0.01em;
 }
 
+/* ClickUp 1amdve27n1c: used to wrap a plain "✓" character inside its own
+   drawn circle (border + border-radius:50%). The Tabler circle-check icon
+   now in the markup already draws that ring itself, so this just sizes
+   and colours the icon — no separate circle, or it'd double up. */
 .aw-verified {
 	color: var(--aw-accent);
-	font-size: 14px;
-	border: 1px solid rgba(200, 243, 35, 0.4);
-	border-radius: 50%;
-	width: 20px;
-	height: 20px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+}
+
+.aw-verified svg {
+	display: block;
 }
 
 .aw-profile-identity .aw-ticker-row {
@@ -1086,6 +1127,36 @@
 	padding: 16px 0;
 }
 
+/* Smart Money (Nansen) panel — ClickUp 1amdve27ccr. Reuses the existing
+   .aw-panel / .aw-stat-row / .aw-badge / .aw-stale-note / .aw-market-updated
+   building blocks (Market panel pattern) rather than inventing new ones. */
+.aw-smart-money-panel .aw-smart-money-blurb {
+	margin: 10px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--aw-muted);
+}
+
+.aw-flow-positive {
+	color: var(--aw-positive);
+	font-weight: 600;
+}
+
+.aw-flow-negative {
+	color: var(--aw-negative);
+	font-weight: 600;
+}
+
+.aw-badge-demo {
+	border-color: var(--aw-accent);
+	color: var(--aw-accent);
+}
+
+.aw-smart-money-demo {
+	border-style: dashed;
+	border-color: var(--aw-accent);
+}
+
 .aw-ai-pending {
 	border: 1px dashed var(--aw-border-strong);
 	border-radius: var(--aw-radius);
@@ -1117,18 +1188,49 @@
 }
 
 .aw-report-form {
-	margin-top: 10px;
+	margin-top: 8px;
 	padding: 10px;
 	border: 1px solid var(--aw-border-strong);
 	border-radius: var(--aw-radius);
 	background: var(--aw-surface-2);
 }
 
+/* Label + Close share a row so Close doesn't cost the form any extra
+   vertical space of its own — ClickUp 1amdve27mt4 requirement 2: a
+   clearly labelled way to close the form that's distinct from Cancel
+   (Cancel stays in the button row below as the deliberate secondary CTA;
+   Close is the quick "never mind" escape at the top, same text-link
+   styling as the "Report an issue" trigger itself for visual symmetry). */
+.aw-report-form-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 6px;
+}
+
 .aw-report-label {
 	display: block;
 	font-size: 11px;
 	color: var(--aw-muted);
-	margin-bottom: 6px;
+	margin: 0;
+}
+
+.aw-report-close {
+	flex: 0 0 auto;
+	background: none;
+	border: none;
+	padding: 0;
+	font-size: 10px;
+	text-decoration: underline;
+	color: var(--aw-muted);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.aw-report-close:hover,
+.aw-report-close:focus-visible {
+	color: var(--aw-text);
 }
 
 .aw-report-textarea {
@@ -1138,6 +1240,7 @@
 	font: inherit;
 	font-size: 12px;
 	padding: 8px;
+	margin: 0;
 	border-radius: var(--aw-radius);
 	border: 1px solid var(--aw-border-strong);
 	background: var(--aw-surface);
@@ -1160,12 +1263,23 @@
 	gap: 8px;
 }
 
+/* Button hierarchy per 1amdve27mt4 requirements 3-4: Submit is the solid
+   lime-green primary CTA (unchanged, already matched the spec), Cancel is
+   now a lime-green OUTLINE secondary CTA (was a neutral grey outline —
+   the actual gap the ticket calls out) matching the existing outlined-
+   button language used elsewhere (e.g. .aw-coverage-filter). Both sized
+   to the ticket's explicit 36px / ~0.75rem spec, replacing the previous
+   ~26px / 11px pair that was undersized relative to it. */
 .aw-report-submit,
 .aw-report-cancel {
-	font-size: 11px;
-	padding: 6px 12px;
+	height: 36px;
+	padding: 0 16px;
+	font-size: 0.75rem;
 	border-radius: var(--aw-radius);
 	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .aw-report-submit {
@@ -1181,9 +1295,25 @@
 }
 
 .aw-report-cancel {
-	border: 1px solid var(--aw-border-strong);
+	border: 1px solid var(--aw-accent);
 	background: transparent;
-	color: var(--aw-muted);
+	color: var(--aw-accent);
+}
+
+.aw-report-cancel:hover,
+.aw-report-cancel:focus-visible {
+	background: rgba(200, 243, 35, 0.08);
+}
+
+@media (max-width: 420px) {
+	.aw-report-actions {
+		flex-wrap: wrap;
+	}
+
+	.aw-report-submit,
+	.aw-report-cancel {
+		flex: 1 1 auto;
+	}
 }
 
 .aw-report-status {

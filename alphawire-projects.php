@@ -2,9 +2,76 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.7
+ * Version: 0.9.9
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.9 — ClickUp 1amdve27mrz "[AW] Projects Feedback phase 2" (Miguel's
+ * design review via Anke), all 5 subtasks. Small, independent UI fixes —
+ * no data or architecture changes:
+ *   - 1amdve27mt4 (Report Issue form): the "Report an issue" trigger was
+ *     already a plain text link (not the prominent outlined button the
+ *     ticket described), so no change there. What was actually missing:
+ *     a dedicated Close control next to the label, distinct from Cancel
+ *     at the bottom (projects.js now treats both the same way); Cancel
+ *     switched from a neutral grey outline to the lime-green outline the
+ *     ticket specifies; Submit/Cancel resized to the spec's 36px / 0.75rem
+ *     (were ~26px / 11px).
+ *   - 1amdve27muy (category filter selected state): .aw-nav-item.is-active
+ *     only differed by text colour + a background shared with :hover —
+ *     on the mobile horizontal strip all pills shared that same
+ *     background, so the selected one barely stood out. Now gets its own
+ *     accent border + tinted fill, with a higher-specificity rule so it
+ *     survives the mobile layout's override.
+ *   - 1amdve27n1c (verified badge): swapped the plain "✓" character for
+ *     Tabler's circle-check icon — fetched from Tabler's own rendered
+ *     markup (not retyped from memory) via Claude in Chrome, since the
+ *     icon's own ring replaces the hand-drawn circle .aw-verified used to
+ *     draw around the character.
+ *   - 1amdve27n1r (standardise icon sizing): added aw_projects_icon()
+ *     (template-functions.php) — the same real-Tabler-markup approach —
+ *     and used it to replace the Directory page's unicode glyphs
+ *     (◎ ⚡ ↻ ✦ ⌕, no consistent size) with real 24px SVGs. Scoped to
+ *     templates/archive-project.php only, per the ticket.
+ *   - 1amdve27n8r (redundant category tag): the Project header had a
+ *     narrative chip row sitting between the description and the
+ *     external links — removed (the same narratives still show in the
+ *     Overview tab's "Top Narratives" panel), so the links now sit
+ *     directly under the description.
+ *
+ * v0.9.8 — Nansen Smart Money UI + compliance controls (ClickUp 1amdve27ccr
+ * "[AW] Projects Work Item 4", subtasks 1/3/4). The Nansen chain/token-address
+ * mapping, cache-only sync service and Leaderboard REST route already existed
+ * (Intelligence proposal Phase 1); this adds a Project-page surface for that
+ * data plus the controls the ticket requires before it can go further:
+ *   - Subtask 1 (UI blocks): templates/single-project.php now shows a
+ *     "Smart Money" panel (24h net flow, holder count, Nansen attribution,
+ *     Claude-written blurb when available) in the Overview tab's third
+ *     column, next to Market — omitted entirely (not shown empty) for a
+ *     Project with no Nansen mapping or while the integration is disabled.
+ *     Includes an admin-only demo-data preview (?aw_nansen_demo=1, gated on
+ *     manage_options, never calls Nansen) so stakeholders can review the
+ *     design before real API access/legal sign-off lands, per the ticket's
+ *     explicit allowance for placeholder-data frontend work.
+ *   - Subtask 3 (keep Nansen data separate from Claude/AI Summaries):
+ *     audited class-ai-summary-service.php's build_prompt() — confirmed it
+ *     never ingests Nansen data. The one place that did,
+ *     class-smart-money-service.php::maybe_generate_blurb(), is now gated
+ *     behind a new Settings flag (OPTION_NANSEN_AI_BLURB_ENABLED) that
+ *     defaults OFF, so no Nansen-derived number reaches a Claude prompt
+ *     until Legal explicitly approves it.
+ *   - Subtask 4 (disable/purge controls): a new kill switch
+ *     (OPTION_NANSEN_ENABLED, defaults ON since a real key is already live
+ *     on staging) stops the hourly sync and hides the panel/Leaderboard
+ *     everywhere when turned off, without affecting any other Project-page
+ *     content. A new "Purge cached Nansen data now" button in Projects →
+ *     Settings (class-smart-money-service.php::handle_purge_request())
+ *     deletes every cached + last-known-good Smart Money value and records
+ *     who did it and when, for auditability.
+ *   - Out of scope for this pass, left for when Legal/API access land:
+ *     subtask 2's full "map every approved response field" work, and
+ *     subtask 4's actual geographic-restriction enforcement (the ticket
+ *     itself flags both as pending external confirmation).
  *
  * v0.9.7 — Reconciles this branch with the independent v0.9.4 fix pass
  * (commit bb9a40b) that landed on GitHub main on Oct 7 while this branch's
@@ -659,7 +726,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.7' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.9' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

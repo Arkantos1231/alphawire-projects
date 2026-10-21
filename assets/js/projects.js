@@ -222,7 +222,11 @@
 			return;
 		}
 
-		var reportCancel = e.target.closest( '[data-aw-report-cancel]' );
+		// Cancel (bottom of the form) and Close (top-right, next to the
+		// label — 1amdve27mt4 requirement 2, a quick "never mind" distinct
+		// from the deliberate Cancel CTA) both just dismiss the form
+		// without submitting, so they share this one handler.
+		var reportCancel = e.target.closest( '[data-aw-report-cancel], [data-aw-report-close]' );
 		if ( reportCancel ) {
 			var cancelForm = reportCancel.closest( '[data-aw-report-form]' );
 			if ( cancelForm ) {

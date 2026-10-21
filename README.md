@@ -561,6 +561,61 @@ completo:
   → resultados, vía `display:contents` en `.aw-directory-main`), que no
   deja los filtros varados debajo de todos los resultados.
 
+### v0.9.8 — Panel de Smart Money (Nansen) + controles de cumplimiento
+
+Tarea de ClickUp `1amdve27ccr` ("[AW] Projects Work Item 4" — integración
+de Nansen Blockchain Intelligence), subtareas 1, 3 y 4. El mapeo de
+cadena/dirección de token por Project, el servicio de sync cacheado
+(`class-smart-money-service.php`) y el endpoint del Leaderboard ya
+existían de una fase previa (Intelligence proposal, Phase 1); esta versión
+agrega la superficie en la página del Project y los controles que pide el
+ticket antes de avanzar más:
+
+- **Subtarea 1 (bloques de UI):** `templates/single-project.php` ahora
+  muestra un panel "Smart Money" (net flow 24h, cantidad de holders,
+  atribución a Nansen, y el blurb de Claude cuando existe) en la tercera
+  columna del tab Overview, junto a Market. Se omite por completo — no se
+  muestra vacío — si el Project no tiene chain/token mapeado o si la
+  integración está desactivada. Incluye una vista previa con datos de
+  ejemplo solo para administradores (`?aw_nansen_demo=1`, exige
+  `manage_options`, nunca llama a Nansen) para que el equipo pueda revisar
+  el diseño antes de tener acceso real a la API o el visto bueno legal —
+  el ticket permite explícitamente avanzar el frontend con datos de
+  placeholder.
+- **Subtarea 3 (separar datos de Nansen de Claude/AI Summaries):** se
+  auditó `class-ai-summary-service.php::build_prompt()` — confirmado que
+  nunca usa datos de Nansen. El único lugar que sí lo hacía,
+  `class-smart-money-service.php::maybe_generate_blurb()`, ahora depende
+  de un nuevo flag en Settings (`OPTION_NANSEN_AI_BLURB_ENABLED`) que
+  viene **desactivado por default** — ningún dato de Nansen llega a un
+  prompt de Claude hasta que Legal lo apruebe explícitamente.
+- **Subtarea 4 (desactivar/purgar):** un nuevo interruptor general
+  (`OPTION_NANSEN_ENABLED`, **activado por default** porque ya hay una key
+  real de Nansen configurada en staging) corta el sync horario y oculta
+  el panel/Leaderboard en todo el sitio al apagarlo, sin afectar el resto
+  de la página del Project. También se agregó un botón "Purgar datos de
+  Nansen en caché" en Projects → Settings
+  (`class-smart-money-service.php::handle_purge_request()`) que borra
+  todo el caché y el "último valor conocido" de Smart Money, y deja
+  registrado quién lo hizo y cuándo, para auditoría.
+- **Fuera de alcance por ahora** (el propio ticket los marca como
+  pendientes de algo externo): el mapeo completo de todos los campos
+  aprobados de Nansen (subtarea 2) y la restricción geográfica real
+  (subtarea 4) — ambos dependen de confirmación legal/de producto que
+  todavía no llegó.
+
+### v0.9.9 — Feedback de diseño phase 2 (Miguel/Anke, ClickUp `1amdve27mrz`)
+
+Cinco items chicos de UI, cada uno independiente de los demás — sin cambios de datos ni de arquitectura:
+
+- **Form de Report Issue** (`1amdve27mt4`): el link "Report an issue" ya era un link de texto discreto, no el botón outlined que describía el ticket — eso no cambió. Lo que sí faltaba: un control **Close** separado junto al label, distinto de Cancel (ambos hacen lo mismo — cerrar sin enviar — pero antes solo existía Cancel); Cancel pasó de un borde gris neutro a borde+texto verde lima como pide el ticket; Submit/Cancel ahora miden 36px de alto con 0.75rem de fuente (antes ~26px/11px).
+- **Selected state de categorías** (`1amdve27muy`): `.aw-nav-item.is-active` solo se distinguía por el color del texto y compartía fondo con `:hover` — en la tira horizontal de mobile, todos los pills terminaban con el mismo fondo, así que el seleccionado casi no se notaba. Ahora tiene su propio borde + relleno tintado en verde, con una regla de mayor especificidad para que sobreviva al override de mobile.
+- **Badge de Verified** (`1amdve27n1c`): se cambió el carácter "✓" por el ícono circle-check de Tabler — traído del render real de tabler.io (no de memoria) vía Claude in Chrome, ya que el ícono dibuja su propio círculo y reemplaza el borde que `.aw-verified` dibujaba a mano alrededor del check.
+- **Estandarizar íconos a 24px** (`1amdve27n1r`): nueva función `aw_projects_icon()` en `template-functions.php` (mismo enfoque de markup real de Tabler) que reemplaza los glyphs unicode del Directory (◎ ⚡ ↻ ✦ ⌕, sin tamaño consistente) por SVGs reales a 24px. Acotado a `templates/archive-project.php`, tal como pide el ticket.
+- **Tag de categoría redundante** (`1amdve27n8r`): el header del Project tenía un chip de narrativa entre la descripción y los links externos — se sacó (la misma info sigue en el panel "Top Narratives" del tab Overview), así que los links quedan pegados debajo de la descripción.
+
+Cada uno se verificó antes de integrar: lint de PHP/JS, balance de llaves en CSS, y un render aislado con la CSS real del plugin (Playwright headless) comparando antes/después — capturas enviadas en el chat de la tarea de reconciliación.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

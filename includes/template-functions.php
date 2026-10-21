@@ -138,6 +138,40 @@ function aw_projects_compact_number( $value ) {
 }
 
 /**
+ * Inline Tabler Icons SVG (https://tabler.io/icons, MIT licensed) — the
+ * path data below was pulled directly from Tabler's own rendered markup,
+ * not retyped from memory, so it's exact. ClickUp 1amdve27n1r
+ * ("Standardise Icon Sizing Across Projects") replaces the Directory
+ * page's assorted unicode glyphs (◎ ⚡ ↻ ✦ ⌕) with these, all at a
+ * consistent 24px by default. Scoped to templates/archive-project.php
+ * only, per that ticket — single-project.php's verified badge is its own
+ * separate ticket (1amdve27n1c) with its own icon.
+ *
+ * Only the handful of icons this plugin actually uses are kept here
+ * (not a full icon-font/sprite dependency) — add another the same way:
+ * paste its <path> elements in from a real render, same as these.
+ */
+function aw_projects_icon( $name, $size = 24 ) {
+	$icons = array(
+		'layout-grid' => '<path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path d="M14 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path>',
+		'bolt'        => '<path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"></path>',
+		'refresh'     => '<path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>',
+		'sparkles'    => '<path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6"></path>',
+		'search'      => '<path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path><path d="M21 21l-6 -6"></path>',
+	);
+
+	if ( ! isset( $icons[ $name ] ) ) {
+		return;
+	}
+
+	printf(
+		'<svg class="aw-icon" width="%1$d" height="%1$d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path>%2$s</svg>',
+		(int) $size,
+		$icons[ $name ] // phpcs:ignore WordPress.Security.EscapeOutput -- fixed, trusted inline constant above, not user input; same unescaped-SVG pattern as aw_projects_sparkline() below.
+	);
+}
+
+/**
  * A minimal inline SVG sparkline from a plain array of prices (the
  * market payload's 7-day series) — no charting library, no client-side
  * JS. Renders nothing (rather than an empty/broken chart) when there
