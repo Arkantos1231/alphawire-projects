@@ -40,6 +40,7 @@ class AlphaWire_Projects_Smart_Money_Service {
 
 	public function hooks() {
 		add_action( self::CRON_HOOK, array( $this, 'sync_all' ) );
+		add_action( 'admin_post_aw_purge_nansen_data', array( $this, 'handle_purge_request' ) );
 
 		add_action(
 			'init',
@@ -66,6 +67,15 @@ class AlphaWire_Projects_Smart_Money_Service {
 	 * used for CoinGecko IDs.
 	 */
 	public function sync_all() {
+		if ( ! AlphaWire_Projects_Settings::is_nansen_enabled() ) {
+			// Kill switch is off (OPTION_NANSEN_ENABLED) — no-op, leave
+			// whatever is already cached in place rather than clearing it;
+			// an operator flipping this back on should see the last-known
+			// data immediately, not an empty Leaderboard, while the next
+			// hourly sync catches back up.
+			return;
+		}
+
 		$api_key = AlphaWire_Projects_Settings::get_nansen_api_key();
 		if ( empty( $api_key ) ) {
 			// No key yet — see class-settings.php's OPTION_NANSEN_API_KEY
@@ -109,6 +119,63 @@ class AlphaWire_Projects_Smart_Money_Service {
 				usleep( 250000 );
 			}
 		}
+	}
+
+	/**
+	 * Nonced admin-post handler for the "Purge cached Nansen data" button
+	 * (class-settings.php::render_nansen_purge_field()) — ClickUp
+	 * 1amdve27cdg: "integration disablement and data-purge controls" /
+	 * "data deletion can be verified and recorded". Deletes every Project's
+	 * cached transient AND its permanent "last known good" stale fallback —
+	 * a real purge, not just letting the cache expire — and records who did
+	 * it and when so that's auditable afterwards. Same nonced-GET-link
+	 * pattern as the Reject/Generate actions in
+	 * class-ai-summary-metabox.php, so it also has its own confirm() dialog
+	 * (don't click-test this live via browser automation, same rule as
+	 * that Reject button).
+	 */
+	public function handle_purge_request() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'alphawire-projects' ) );
+		}
+		check_admin_referer( 'aw_purge_nansen_data' );
+
+		$project_ids = get_posts(
+			array(
+				'post_type'      => AlphaWire_Projects_Post_Type::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		$purged = 0;
+		foreach ( $project_ids as $project_id ) {
+			delete_transient( self::CACHE_PREFIX . $project_id );
+			if ( false !== get_option( self::STALE_OPTION_PREFIX . $project_id, false ) ) {
+				delete_option( self::STALE_OPTION_PREFIX . $project_id );
+				++$purged;
+			}
+		}
+
+		$current_user = wp_get_current_user();
+		update_option(
+			AlphaWire_Projects_Settings::OPTION_NANSEN_LAST_PURGE,
+			array(
+				'when'  => current_time( 'mysql' ),
+				'who'   => $current_user && $current_user->exists() ? $current_user->user_login : 'unknown',
+				'count' => $purged,
+			),
+			false
+		);
+
+		wp_safe_redirect(
+			add_query_arg(
+				array( 'page' => 'alphawire-projects-settings', 'aw_nansen_purged' => $purged ),
+				admin_url( 'edit.php?post_type=' . AlphaWire_Projects_Post_Type::POST_TYPE )
+			)
+		);
+		exit;
 	}
 
 	private function get_nansen_chain( $project_id ) {
@@ -227,8 +294,22 @@ class AlphaWire_Projects_Smart_Money_Service {
 	 * on the Claude key already used for AI Summaries; a missing key just
 	 * skips the blurb rather than failing the whole Nansen sync, since the
 	 * Leaderboard's numbers and sort order don't depend on it.
+	 *
+	 * ALSO gated on OPTION_NANSEN_AI_BLURB_ENABLED (default OFF) — ClickUp
+	 * 1amdve27cd8 ("Keep Nansen Data Separate from Claude and AI Summaries")
+	 * requires Nansen-derived numbers to be excluded from any Claude prompt
+	 * by default, pending Legal sign-off. This is the ONLY place in the
+	 * plugin that puts Nansen data in front of Claude — audited at the time
+	 * this flag was added: the main AI Project Summary prompt
+	 * (class-ai-summary-service.php::build_prompt()) only ever sees
+	 * title/ticker/description/categories/timeline/coverage, never anything
+	 * from this service.
 	 */
 	private function maybe_generate_blurb( $project_id, $netflow_usd, $holders_count ) {
+		if ( ! AlphaWire_Projects_Settings::is_nansen_ai_blurb_enabled() ) {
+			return '';
+		}
+
 		$api_key = AlphaWire_Projects_Settings::get_api_key();
 		if ( empty( $api_key ) || null === $netflow_usd ) {
 			return '';

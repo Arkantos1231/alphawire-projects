@@ -37,6 +37,32 @@ class AlphaWire_Projects_Settings {
 	// back instead of an auth error on its next hourly run.
 	const OPTION_NANSEN_API_KEY = 'alphawire_projects_nansen_api_key';
 
+	// Incident-response kill switch (ClickUp 1amdve27cdg: "allows authorised
+	// operators to disable the integration"). Defaults to ON — a real
+	// Nansen key is already live on staging and this flag is for turning
+	// the integration OFF if something goes wrong, not a gate waiting on
+	// approval. When off: sync_all() no-ops, the REST payload's
+	// `smartMoney` key comes back null, and the Project page panel is
+	// omitted entirely — "AlphaWire Projects pages continue to function
+	// when the Nansen integration is disabled" (same subtask, acceptance
+	// criteria).
+	const OPTION_NANSEN_ENABLED = 'alphawire_projects_nansen_enabled';
+
+	// Legal gate (ClickUp 1amdve27cd8: "Keep Nansen Data Separate from
+	// Claude and AI Summaries… excluded by default until Legal
+	// confirms/approves"). Unlike OPTION_NANSEN_ENABLED above, this
+	// defaults OFF — the opposite default, on purpose, because this one is
+	// a compliance gate, not an ops kill switch. Only flip it on once
+	// Legal has actually signed off on feeding Nansen-derived numbers into
+	// a Claude prompt (class-smart-money-service.php::maybe_generate_blurb()).
+	const OPTION_NANSEN_AI_BLURB_ENABLED = 'alphawire_projects_nansen_ai_blurb_enabled';
+
+	// Not a user-editable setting — just where the purge handler
+	// (class-smart-money-service.php::handle_purge_request()) records who
+	// purged cached/stale Nansen data and when, per 1amdve27cdg's "data
+	// deletion can be verified and recorded" requirement.
+	const OPTION_NANSEN_LAST_PURGE = 'alphawire_projects_nansen_last_purge';
+
 	// AI Summary disclaimer (engineering review §11: "the appropriate
 	// disclaimer and correction wording must be agreed before launch").
 	// Editable here so the approved wording can go live without a release;
@@ -225,6 +251,26 @@ class AlphaWire_Projects_Settings {
 			)
 		);
 
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_NANSEN_ENABLED,
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_checkbox' ),
+				'default'           => true,
+			)
+		);
+
+		register_setting(
+			'alphawire_projects_settings',
+			self::OPTION_NANSEN_AI_BLURB_ENABLED,
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_checkbox' ),
+				'default'           => false,
+			)
+		);
+
 		add_settings_section(
 			'alphawire_projects_nansen_section',
 			'Nansen — Smart Money Leaderboard',
@@ -241,6 +287,42 @@ class AlphaWire_Projects_Settings {
 			'alphawire-projects-settings',
 			'alphawire_projects_nansen_section'
 		);
+
+		add_settings_field(
+			self::OPTION_NANSEN_ENABLED,
+			'Nansen integration',
+			array( __CLASS__, 'render_nansen_enabled_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_nansen_section'
+		);
+
+		add_settings_field(
+			self::OPTION_NANSEN_AI_BLURB_ENABLED,
+			'Feed Nansen data to Claude',
+			array( __CLASS__, 'render_nansen_ai_blurb_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_nansen_section'
+		);
+
+		add_settings_field(
+			'alphawire_nansen_purge',
+			'Purge cached Nansen data',
+			array( __CLASS__, 'render_nansen_purge_field' ),
+			'alphawire-projects-settings',
+			'alphawire_projects_nansen_section'
+		);
+	}
+
+	/**
+	 * Shared by both Nansen checkboxes below. An unchecked HTML checkbox
+	 * sends nothing at all, so the field being absent from $_POST (which
+	 * register_setting's sanitize callback sees as $value === null when the
+	 * setting wasn't submitted) means "off", not "leave unchanged" — unlike
+	 * the API key fields above, there's no blank-vs-unchanged ambiguity to
+	 * handle here.
+	 */
+	public static function sanitize_checkbox( $value ) {
+		return ! empty( $value );
 	}
 
 	/**
@@ -304,6 +386,58 @@ class AlphaWire_Projects_Settings {
 		<p class="description">
 			<?php echo esc_html( $masked ); ?> — leave this field blank to keep the current key.
 			Stored server-side only; no REST endpoint or front-end page ever returns it.
+		</p>
+		<?php
+	}
+
+	public static function render_nansen_enabled_field() {
+		$enabled = self::is_nansen_enabled();
+		?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NANSEN_ENABLED ); ?>" value="1" <?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Enabled', 'alphawire-projects' ); ?>
+		</label>
+		<p class="description">
+			Incident-response kill switch. Turn this off to immediately stop the hourly Nansen sync and hide the
+			Smart Money panel/Leaderboard everywhere on the site — Project pages keep working normally either way.
+			On by default since a Nansen key is already configured.
+		</p>
+		<?php
+	}
+
+	public static function render_nansen_ai_blurb_field() {
+		$enabled = self::is_nansen_ai_blurb_enabled();
+		?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NANSEN_AI_BLURB_ENABLED ); ?>" value="1" <?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Allow Nansen-derived numbers (net flow, holder count) into the Claude-written Smart Money blurb', 'alphawire-projects' ); ?>
+		</label>
+		<p class="description">
+			<strong>Off by default and should stay off until Legal confirms this use is permitted</strong> (ClickUp:
+			"Keep Nansen Data Separate from Claude and AI Summaries"). This does not affect the main AI Project
+			Summary feature — that prompt never includes Nansen data, with or without this flag.
+		</p>
+		<?php
+	}
+
+	public static function render_nansen_purge_field() {
+		$purge_url = wp_nonce_url(
+			add_query_arg( array( 'action' => 'aw_purge_nansen_data' ), admin_url( 'admin-post.php' ) ),
+			'aw_purge_nansen_data'
+		);
+		$last = self::get_nansen_last_purge();
+		?>
+		<a href="<?php echo esc_url( $purge_url ); ?>" class="button button-link-delete" onclick="return confirm('<?php echo esc_js( __( 'Delete all cached and last-known-good Smart Money data for every Project? This cannot be undone — the Leaderboard and Project pages will show nothing Nansen-related until the next hourly sync repopulates it.', 'alphawire-projects' ) ); ?>');">
+			<?php esc_html_e( 'Purge cached Nansen data now', 'alphawire-projects' ); ?>
+		</a>
+		<p class="description">
+			Deletes every cached and "last known good" Smart Money value (net flow, holder count, blurb) stored for
+			any Project. Does not touch the API key or the Chain/Token Address mapped on individual Projects — the
+			next sync simply starts from empty again.
+			<?php if ( $last ) : ?>
+				<br />Last purged <?php echo esc_html( wp_date( 'M j, Y g:ia', strtotime( $last['when'] ) ) ); ?>
+				by <?php echo esc_html( $last['who'] ); ?> (<?php echo esc_html( (int) $last['count'] ); ?> Project<?php echo 1 === (int) $last['count'] ? '' : 's'; ?>).
+			<?php endif; ?>
 		</p>
 		<?php
 	}
@@ -429,6 +563,26 @@ class AlphaWire_Projects_Settings {
 
 	public static function get_nansen_api_key() {
 		return get_option( self::OPTION_NANSEN_API_KEY, '' );
+	}
+
+	public static function is_nansen_enabled() {
+		// Default true — see OPTION_NANSEN_ENABLED's docblock. get_option()'s
+		// default only applies when the option row doesn't exist at all yet
+		// (fresh install / before Settings is ever saved), which is exactly
+		// the "preserve current working behaviour" case this needs to cover.
+		return (bool) get_option( self::OPTION_NANSEN_ENABLED, true );
+	}
+
+	public static function is_nansen_ai_blurb_enabled() {
+		return (bool) get_option( self::OPTION_NANSEN_AI_BLURB_ENABLED, false );
+	}
+
+	/**
+	 * @return array{when:string,who:string,count:int}|null
+	 */
+	public static function get_nansen_last_purge() {
+		$value = get_option( self::OPTION_NANSEN_LAST_PURGE, null );
+		return is_array( $value ) && ! empty( $value['when'] ) ? $value : null;
 	}
 
 	public static function get_model() {

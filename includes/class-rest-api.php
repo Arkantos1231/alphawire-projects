@@ -104,7 +104,40 @@ class AlphaWire_Projects_REST {
 			'timeline'        => self::field( 'timeline', $post->ID, array() ),
 			'relatedProjects' => self::related_projects( $post->ID ),
 			'coverage'        => AlphaWire_Projects_Content_Relationships::get_coverage( $post->ID ),
+			'smartMoney'      => self::smart_money( $post->ID ),
 		);
+	}
+
+	/**
+	 * Nansen Smart Money data for this Project's page (ClickUp 1amdve27ccr
+	 * subtask "Build Nansen UI Blocks for AlphaWire Projects"). Returns
+	 * null — not an empty/zeroed shape — whenever the panel should be
+	 * omitted entirely rather than shown empty: integration disabled
+	 * (OPTION_NANSEN_ENABLED), the service class isn't loaded, or this
+	 * Project has no Nansen chain/token-address mapped. Same
+	 * "null means don't render" convention build_payload() already uses
+	 * elsewhere (e.g. aiSummary['text']).
+	 *
+	 * Cache-only, like everything else that touches Smart_Money_Service —
+	 * this never makes a live Nansen call on a page render.
+	 */
+	private static function smart_money( $project_id ) {
+		if ( ! AlphaWire_Projects_Settings::is_nansen_enabled() ) {
+			return null;
+		}
+		if ( ! class_exists( 'AlphaWire_Projects_Smart_Money_Service' ) ) {
+			return null;
+		}
+
+		$chain   = self::field( 'nansen_chain', $project_id );
+		$address = self::field( 'nansen_token_address', $project_id );
+		if ( empty( $chain ) || empty( $address ) ) {
+			return null;
+		}
+
+		$data          = AlphaWire_Projects_Smart_Money_Service::instance()->get_cached_smart_money( $project_id );
+		$data['chain'] = $chain;
+		return $data;
 	}
 
 	/**

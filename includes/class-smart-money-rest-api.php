@@ -54,6 +54,14 @@ class AlphaWire_Projects_Smart_Money_REST {
 	 * @return array{rows: array}
 	 */
 	public static function query_leaderboard( array $params ) {
+		if ( ! AlphaWire_Projects_Settings::is_nansen_enabled() ) {
+			// Kill switch (OPTION_NANSEN_ENABLED) is off — the Leaderboard
+			// page itself still renders (templates/smart-money-leaderboard.php
+			// handles an empty row set the same way it handles "no Projects
+			// mapped yet"), it just has nothing to show until re-enabled.
+			return array( 'rows' => array() );
+		}
+
 		$args = array(
 			'post_type'      => AlphaWire_Projects_Post_Type::POST_TYPE,
 			'post_status'    => 'publish',
