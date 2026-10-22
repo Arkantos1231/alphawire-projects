@@ -2,9 +2,40 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.9
+ * Version: 0.9.10
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.10 — Fixes a live-staging-only cascade bug surfaced right after
+ * v0.9.9 shipped: the theme/site CSS was beating this plugin's own styles
+ * on every element that ties it at equal selector specificity, which never
+ * showed up in isolated QA because that QA only loads projects.css, not
+ * the real theme stylesheet.
+ *   - Report Issue form buttons (trigger/close/submit/cancel) were
+ *     rendering pink/magenta with a transparent fill instead of the
+ *     intended lime-green, because Hello Elementor's
+ *     `[type="button"], [type="submit"], button` rule in style.min.css
+ *     ties these at (0,1,0) specificity and loads after projects.css, so
+ *     it won on source order. Fix: every affected selector in
+ *     projects.css is now scoped under the `.aw-projects` ancestor
+ *     (e.g. `.aw-projects .aw-report-submit`), which raises specificity
+ *     to (0,2,0) and wins outright — no !important needed.
+ *   - Every SVG icon this plugin draws (the Directory/search Tabler icons
+ *     from 1amdve27n1r, the verified-badge circle-check from 1amdve27n1c)
+ *     was rendering as a solid white/grey box instead of line art,
+ *     because the site's own dark-mode stylesheet carries a blanket
+ *     `body.dark-mode svg:not(.alphaclub-signal *) path, line, circle,
+ *     rect` rule forcing fill+stroke to solid white on every matching
+ *     element — including each icon's own invisible "hit area" path
+ *     (fill="none" on <path d="M0 0h24v24H0z">), which is exactly what
+ *     was filling in as a solid box. That rule's specificity (0,2,3) beats
+ *     any plain class override, so this needed `.aw-projects svg path,
+ *     line, circle, rect { fill: none !important; stroke: currentColor
+ *     !important; }` — safe site-wide for this plugin since every SVG it
+ *     draws already relies on fill="none" + stroke="currentColor" with no
+ *     exceptions (verified: only <path> elements, no <circle>/<rect>/
+ *     <line> anywhere in the codebase; the sparkline chart uses
+ *     <polyline>, which this rule doesn't even touch).
  *
  * v0.9.9 — ClickUp 1amdve27mrz "[AW] Projects Feedback phase 2" (Miguel's
  * design review via Anke), all 5 subtasks. Small, independent UI fixes —
@@ -726,7 +757,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.9' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.10' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

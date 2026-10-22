@@ -616,6 +616,15 @@ Cinco items chicos de UI, cada uno independiente de los demás — sin cambios d
 
 Cada uno se verificó antes de integrar: lint de PHP/JS, balance de llaves en CSS, y un render aislado con la CSS real del plugin (Playwright headless) comparando antes/después — capturas enviadas en el chat de la tarea de reconciliación.
 
+### v0.9.10 — Fix de cascada CSS contra el theme (bug visto solo en staging, no en el QA aislado de v0.9.9)
+
+Apenas desplegado v0.9.9, los botones del form de Report Issue se veían rosa/magenta (no verde lima) y los íconos del Directory se veían como cajas blancas sólidas en vez de line-art — ninguno de los dos problemas apareció en el QA de v0.9.9 porque ese QA solo carga `projects.css` en aislado, sin el CSS real del theme/site con el que compite en producción.
+
+- **Botones rosa/magenta** (trigger, Close, Submit, Cancel del form de Report Issue): el theme Hello Elementor tiene una regla `[type="button"], [type="submit"], button` en `style.min.css` que empata en especificidad (0,1,0) con los selectores de una sola clase de este plugin y gana por orden de carga (se enqueuea después de `projects.css`). Fix: todos los selectores de botones afectados ahora van prefijados con el ancestro `.aw-projects` (ej. `.aw-projects .aw-report-submit`), lo que sube la especificidad a (0,2,0) y gana sin necesitar `!important`.
+- **Íconos como cajas blancas** (los SVGs de `aw_projects_icon()` del Directory/búsqueda de `1amdve27n1r`, y el circle-check de Verified de `1amdve27n1c`): el propio sitio tiene una regla de dark-mode (`body.dark-mode svg:not(.alphaclub-signal *) path, line, circle, rect`) que fuerza `fill`/`stroke` a blanco sólido en cualquier `<path>` de la página — incluyendo el "hit area" invisible que cada ícono de Tabler trae (`fill="none"` en `<path d="M0 0h24v24H0z">`), que es exactamente lo que se pintaba como caja sólida. Esa regla tiene especificidad (0,2,3), más alta que cualquier override con clases simples, así que necesitó `.aw-projects svg path, line, circle, rect { fill: none !important; stroke: currentColor !important; }` — seguro en todo el plugin porque cada SVG que dibuja ya depende de `fill="none"` + `stroke="currentColor"` sin excepciones (se verificó: solo hay `<path>` en todo el código, ningún `<circle>`/`<rect>`/`<line>`; el sparkline usa `<polyline>`, que esta regla ni toca).
+
+Verificado con un harness de Playwright que carga `projects.css` **junto con** un stub del CSS del theme que reproduce ambas reglas conflictivas (algo que el QA de v0.9.9 no hacía) — confirma que con el fix puesto, botones e íconos se ven correctos incluso con el theme compitiendo.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace
