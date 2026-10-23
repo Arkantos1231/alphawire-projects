@@ -633,6 +633,14 @@ Causa: la regla de dark-mode del sitio (`body.dark-mode svg:not(.alphaclub-signa
 
 Fix: `.aw-projects.aw-projects.aw-projects svg path` (mismo patrón para `line`/`circle`/`rect`) — repetir la misma clase tres veces en un selector compuesto es válido en CSS y cada repetición suma de nuevo al componente de "clase" de la especificidad, sin tocar el elemento en sí. Queda en (0,3,2): con 3 clases contra sus 2, gana directo sin importar que ellos tengan un selector de tipo más. Confirmado en vivo en `/projects/` (cajas blancas → íconos correctos) y re-confirmado que el fix de botones de v0.9.10 seguía intacto.
 
+### v0.9.12 — El fix de v0.9.11 dejó un cuadro blanco alrededor de cada ícono
+
+Julian lo marcó en una captura con círculos rojos: los íconos del Directory y el badge de Verified ya se veían con su line-art correcto (y del color correcto), pero cada uno quedó con un cuadro/borde blanco alrededor.
+
+Causa: forzar `stroke: currentColor !important` en **todos** los `<path>` (necesario en v0.9.11 para ganarle a la regla `!important` del theme) también le puso un trazo visible al "hit area" invisible que cada ícono trae — `<path stroke="none" d="M0 0h24v24H0z" fill="none">`, siempre el primer `<path>` en el markup de `aw_projects_icon()` y del badge de Verified. Ese path es un cuadrado completo de 24×24 (todo el viewBox), así que darle un trazo visible dibuja literalmente un cuadro alrededor del ícono entero — exactamente el borde blanco de la captura.
+
+Fix: `.aw-projects.aw-projects.aw-projects svg path:first-child { stroke: none !important; }` — re-silencia solo ese primer path. `:first-child` también cuenta como una "clase" más para la especificidad, así que esta regla sigue ganándole tanto a la regla general de arriba como a la del theme. Verificado con el mismo harness de Playwright (projects.css + stub de ambas reglas del theme en competencia): los íconos quedan como line-art limpio, sin cuadro.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

@@ -59,6 +59,23 @@
 	stroke: currentColor !important;
 }
 
+/* v0.9.11 fixed the fill/box problem but introduced a new one: forcing
+   `stroke: currentColor` onto every <path> above also put a stroke on each
+   icon's own invisible "hit area" path (`<path stroke="none"
+   d="M0 0h24v24H0z" fill="none">`, always the first child in
+   aw_projects_icon()'s and the verified badge's markup) — which is a full
+   24x24 square, so a visible stroke on it outlines a box around the whole
+   icon (the white square border Julian's screenshot shows). That path is
+   deliberately invisible by design (it only exists to pad the icon's
+   clickable/visual bounding box) and is always the first <path> in every
+   SVG this plugin draws, so re-silencing just that one child is enough.
+   :first-child counts as another "class" for specificity, so this rule
+   (0,4,2) still safely outranks both the theme's dark-mode rule (0,2,3)
+   and the general rule right above it (0,3,2). */
+.aw-projects.aw-projects.aw-projects svg path:first-child {
+	stroke: none !important;
+}
+
 .aw-projects .aw-eyebrow {
 	font-size: 11px;
 	letter-spacing: 0.06em;

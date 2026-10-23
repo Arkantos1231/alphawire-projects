@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.11
+ * Version: 0.9.12
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.12 — v0.9.11 fixed the icon fill/colour but introduced a new visual
+ * bug: forcing `stroke: currentColor !important` onto every <path> (needed
+ * to beat the theme's !important dark-mode rule, see v0.9.11 note) also
+ * put a visible stroke on each icon's own invisible "hit area" path
+ * (`<path stroke="none" d="M0 0h24v24H0z" fill="none">`, always the first
+ * child in aw_projects_icon()'s and the verified badge's markup) — a full
+ * 24x24 square, so stroking it drew a box around every icon (the white
+ * square border Julian's screenshot shows around the Directory icons and
+ * the Verified checkmark). Fix: `.aw-projects.aw-projects.aw-projects svg
+ * path:first-child { stroke: none !important; }` re-silences just that
+ * one child — `:first-child` counts as another specificity "class", so
+ * this still safely outranks the theme's rule. Confirmed via the
+ * Playwright cascade-conflict harness (projects.css + a stub of both
+ * competing theme rules): icons render as clean line art with no box.
  *
  * v0.9.11 — v0.9.10's icon fix shipped but wasn't enough: live testing on
  * staging right after deploy showed the Directory/search icons were still
@@ -772,7 +787,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.11' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.12' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
