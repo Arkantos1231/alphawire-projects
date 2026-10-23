@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.10
+ * Version: 0.9.11
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.11 — v0.9.10's icon fix shipped but wasn't enough: live testing on
+ * staging right after deploy showed the Directory/search icons were still
+ * solid white boxes. Root cause: the site's dark-mode rule that forces SVG
+ * fill/stroke to white is itself `!important` (only visible via
+ * getPropertyPriority() on the live computed rule — a cssText dump doesn't
+ * surface it clearly), so v0.9.10's `!important` override lost on pure
+ * specificity: their selector (0,2,3) beat `.aw-projects svg path` (0,1,2).
+ * Fix: `.aw-projects.aw-projects.aw-projects svg path` — repeating the
+ * class three times is a standard way to bump the "class" specificity tier
+ * (0,3,2), which now wins outright regardless of their extra type selector.
+ * Confirmed live: Report Issue buttons were already correct after v0.9.10
+ * (trigger/close muted grey, Submit solid lime, Cancel lime outline, all
+ * 36px/0.75rem) — only the SVG fill/stroke fight needed the stronger
+ * selector. See assets/css/projects.css for the full root-cause writeup.
  *
  * v0.9.10 — Fixes a live-staging-only cascade bug surfaced right after
  * v0.9.9 shipped: the theme/site CSS was beating this plugin's own styles
@@ -757,7 +772,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.10' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.11' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

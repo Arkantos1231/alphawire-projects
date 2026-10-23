@@ -29,21 +29,32 @@
 	text-decoration: none;
 }
 
-/* Theme-cascade fix (staging live bug, found after v0.9.9): the site's own
-   dark-mode stylesheet carries a blanket
+/* Theme-cascade fix (staging live bug, found after v0.9.9 — and this is the
+   REVISED fix; the first attempt below wasn't enough, see note):
+   the site's own dark-mode stylesheet carries a blanket
    `body.dark-mode svg:not(.alphaclub-signal *) path, line, circle, rect`
-   rule that forces fill/stroke to solid white on every <path> in the page,
-   loaded later/with higher specificity than anything this plugin can beat
-   with a plain class selector — including each Tabler icon's own invisible
-   "hit area" path (`fill="none"` on <path d="M0 0h24v24H0z">), which is
-   exactly what was rendering as a solid white/grey box instead of line art.
-   Every SVG this plugin draws (aw_projects_icon(), the verified badge) uses
-   fill="none" + stroke="currentColor" with no exceptions, so it's safe to
-   force both back unconditionally here. */
-.aw-projects svg path,
-.aw-projects svg line,
-.aw-projects svg circle,
-.aw-projects svg rect {
+   rule that forces fill/stroke to solid white on every <path> in the page —
+   including each Tabler icon's own invisible "hit area" path (`fill="none"`
+   on <path d="M0 0h24v24H0z">), which is exactly what was rendering as a
+   solid white/grey box instead of line art.
+   That rule is ALSO declared `!important` (confirmed live via computed
+   styles + getPropertyPriority(), not visible from a cssText dump alone),
+   so v0.9.10's first fix — `.aw-projects svg path {...} !important` — lost
+   anyway: with both sides !important, the cascade falls back to comparing
+   specificity, and their selector (3 type selectors + 2 class-equivalents:
+   .dark-mode and :not(.alphaclub-signal) — specificity 0,2,3) beats a
+   single `.aw-projects` class (0,1,2). Repeating the `.aw-projects` class
+   three times below is a deliberate, well-known specificity bump (each
+   repetition of the same class in a compound selector counts again toward
+   the "class" tier) that lands at 0,3,2 — the class tier alone (3 > 2)
+   now wins outright regardless of their extra type selector, no higher
+   !important trick needed. Every SVG this plugin draws (aw_projects_icon(),
+   the verified badge) uses fill="none" + stroke="currentColor" with no
+   exceptions, so it's safe to force both back unconditionally here. */
+.aw-projects.aw-projects.aw-projects svg path,
+.aw-projects.aw-projects.aw-projects svg line,
+.aw-projects.aw-projects.aw-projects svg circle,
+.aw-projects.aw-projects.aw-projects svg rect {
 	fill: none !important;
 	stroke: currentColor !important;
 }

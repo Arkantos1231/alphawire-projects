@@ -625,6 +625,14 @@ Apenas desplegado v0.9.9, los botones del form de Report Issue se veían rosa/ma
 
 Verificado con un harness de Playwright que carga `projects.css` **junto con** un stub del CSS del theme que reproduce ambas reglas conflictivas (algo que el QA de v0.9.9 no hacía) — confirma que con el fix puesto, botones e íconos se ven correctos incluso con el theme compitiendo.
 
+### v0.9.11 — El fix de íconos de v0.9.10 no alcanzaba: la regla del theme también es `!important`
+
+Julian deployó v0.9.10 y probé en vivo: los botones del Report Issue ya estaban perfectos (gris mudo / lima sólido / lima outline, como corresponde), pero los íconos del Directory seguían como cajas blancas sólidas — el fix de v0.9.10 no había funcionado.
+
+Causa: la regla de dark-mode del sitio (`body.dark-mode svg:not(.alphaclub-signal *) path, line, circle, rect`) **también** es `!important` — algo que no era visible al volcar su `cssText` completo (se topó con un guardrail de redacción de datos al intentarlo así) y que recién se confirmó llamando `getPropertyPriority('fill')` sobre la regla ya parseada en vivo. Con los dos lados en `!important`, la cascada vuelve a decidir por especificidad pura: su selector mide (0,2,3) — 3 selectores de tipo (`body`, `svg`, `path`) + 2 equivalentes a clase (`.dark-mode` y el `:not(.alphaclub-signal)`) — contra el (0,1,2) de `.aw-projects svg path` de v0.9.10. Perdía por el componente de clase (1 contra 2).
+
+Fix: `.aw-projects.aw-projects.aw-projects svg path` (mismo patrón para `line`/`circle`/`rect`) — repetir la misma clase tres veces en un selector compuesto es válido en CSS y cada repetición suma de nuevo al componente de "clase" de la especificidad, sin tocar el elemento en sí. Queda en (0,3,2): con 3 clases contra sus 2, gana directo sin importar que ellos tengan un selector de tipo más. Confirmado en vivo en `/projects/` (cajas blancas → íconos correctos) y re-confirmado que el fix de botones de v0.9.10 seguía intacto.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace
