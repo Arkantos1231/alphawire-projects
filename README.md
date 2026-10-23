@@ -641,6 +641,12 @@ Causa: forzar `stroke: currentColor !important` en **todos** los `<path>` (neces
 
 Fix: `.aw-projects.aw-projects.aw-projects svg path:first-child { stroke: none !important; }` — re-silencia solo ese primer path. `:first-child` también cuenta como una "clase" más para la especificidad, así que esta regla sigue ganándole tanto a la regla general de arriba como a la del theme. Verificado con el mismo harness de Playwright (projects.css + stub de ambas reglas del theme en competencia): los íconos quedan como line-art limpio, sin cuadro.
 
+### v0.9.13 — El hover de "Report an issue" seguía rosa
+
+Un nivel más abajo del mismo problema de v0.9.10-12: el theme también tiene su propia regla `[type=button]:hover, [type=submit]:hover, button:hover` (pone `color` + `background-color`, sin `!important`), que empata en especificidad con las reglas base (sin `:hover`) de estos botones — y gana por orden de carga en cualquier propiedad que solo el theme defina en hover. Mis reglas de `:hover` existentes solo reafirmaban `color`, no `background`, así que el fondo rosa del theme se seguía viendo al pasar el mouse sobre "Report an issue" y "Close"; y `Submit report` directamente no tenía su propia regla de `:hover`, así que perdía las dos propiedades.
+
+Fix: cada regla de `:hover`/`:focus-visible` de estos cuatro botones ahora reafirma tanto `color` como `background` (Cancel también necesitó `border-color` de nuevo, mismo motivo). Verificado con el harness de Playwright usando `CSS.forcePseudoState` de CDP para forzar el estado `:hover` real contra el stub de las reglas del theme — ya no sale rosa en ningún estado de ninguno de los cuatro botones.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

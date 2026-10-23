@@ -2,9 +2,27 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.12
+ * Version: 0.9.13
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.13 — Julian caught one more spot of pink: hovering "Report an
+ * issue" still showed the theme's pink fill. Root cause is the same
+ * family of bug as v0.9.10-12, one level deeper: the theme has its own
+ * `[type=button]:hover, [type=submit]:hover, button:hover` rule (sets
+ * `color` + `background-color`, no !important) which ties our *base*
+ * (non-hover) button rules on specificity and wins on source order for
+ * whichever property only the theme sets on hover. Our existing :hover
+ * overrides only re-asserted `color`, not `background`, so the theme's
+ * pink background-color still leaked through on hover for
+ * .aw-report-issue-trigger and .aw-report-close, and .aw-report-submit
+ * had no :hover rule at all (same gap, both properties). Fix: every
+ * affected button's :hover/:focus-visible rule now re-asserts both
+ * `color` and `background` (Cancel also needed `border-color` re-added,
+ * same reasoning). Confirmed via the Playwright harness using CDP
+ * CSS.forcePseudoState to force real :hover state against the
+ * theme-conflict stub — no pink on any state for any of the four
+ * Report Issue buttons.
  *
  * v0.9.12 — v0.9.11 fixed the icon fill/colour but introduced a new visual
  * bug: forcing `stroke: currentColor !important` onto every <path> (needed
@@ -787,7 +805,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.12' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.13' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

@@ -1239,8 +1239,20 @@
 	cursor: pointer;
 }
 
+/* v0.9.13: the base (non-hover) rule above wins its cascade fight against
+   the theme's plain button rule, but the theme ALSO has its own
+   `[type=button]:hover, [type=submit]:hover, button:hover` rule — same
+   (0,2,0) specificity as our un-scoped-further base rule, which is a tie
+   the theme wins on source order for whichever property only IT sets on
+   hover. It sets both `color` and `background-color` there, so any of our
+   buttons whose :hover rule only re-asserts `color` (like this one did)
+   still showed the theme's pink `background-color` on hover — this is
+   what Julian's screenshot caught. Every :hover/:focus-visible rule for
+   these buttons from here down now re-asserts `background` too so nothing
+   is left for the theme's hover rule to win. */
 .aw-projects .aw-report-issue-trigger:hover {
 	color: var(--aw-text);
+	background: none;
 }
 
 .aw-report-form {
@@ -1287,6 +1299,7 @@
 .aw-projects .aw-report-close:hover,
 .aw-projects .aw-report-close:focus-visible {
 	color: var(--aw-text);
+	background: none;
 }
 
 .aw-report-textarea {
@@ -1345,6 +1358,18 @@
 	font-weight: 600;
 }
 
+/* Submit never had its own :hover/:focus rule — it didn't need one to look
+   right at rest, but the theme's `button:hover` rule (see the note on
+   .aw-report-issue-trigger:hover above) ties the base rule's specificity
+   and wins on hover for both color and background-color, turning Submit
+   pink the moment the cursor touched it. Re-asserting the same at-rest
+   look here is enough to block that. */
+.aw-projects .aw-report-submit:hover,
+.aw-projects .aw-report-submit:focus-visible {
+	background: var(--aw-accent);
+	color: #14161a;
+}
+
 .aw-projects .aw-report-submit:disabled {
 	opacity: 0.6;
 	cursor: default;
@@ -1356,9 +1381,17 @@
 	color: var(--aw-accent);
 }
 
+/* Same theme-hover tie as Submit above — this rule already beat it for
+   background-color (that's the only property it used to set), but left
+   `color` to the base .aw-report-cancel rule, which ties the theme's
+   hover rule on specificity and loses on source order, turning Cancel's
+   text white on hover instead of staying lime. Re-asserting color (and
+   border-color, same reasoning) here closes that gap too. */
 .aw-projects .aw-report-cancel:hover,
 .aw-projects .aw-report-cancel:focus-visible {
 	background: rgba(200, 243, 35, 0.08);
+	color: var(--aw-accent);
+	border-color: var(--aw-accent);
 }
 
 @media (max-width: 420px) {
