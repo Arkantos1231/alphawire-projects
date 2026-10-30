@@ -221,18 +221,32 @@ if ( '' !== $category ) {
 		<?php else : ?>
 
 			<?php
-			$trending = AlphaWire_Projects_Directory_REST::trending( null );
-			if ( $trending ) :
+			/**
+			 * ClickUp 1amdve28nvy (Miguel's feedback, via Anke): the four
+			 * discovery sections below were reordered — Editor's Picks first,
+			 * then Top Categories/Trending Narratives directly under it (per
+			 * the ticket's acceptance criteria wording), then the separate
+			 * "Trending Projects" ranked-cards block (not itself named in the
+			 * ticket's 4 buckets, so kept inside the same discovery cluster
+			 * rather than between Editor's Picks and Top Categories, which
+			 * would've broken the "directly below" requirement), then
+			 * Recently Added/Recently Updated, with All Projects last —
+			 * unchanged below. No section was removed, resized or had its
+			 * data source changed, only this reordering.
+			 */
+			?>
+			<?php
+			$picks = AlphaWire_Projects_Directory_REST::editors_picks( null );
+			if ( $picks ) :
 				?>
 				<section class="aw-section">
 					<div class="aw-section-header">
-						<h2>Trending Projects</h2>
-						<p class="aw-hint">Projects gaining momentum across AlphaWire coverage.</p>
-						<a class="aw-hint aw-view-all" href="<?php echo esc_url( add_query_arg( 'view', 'trending', $archive_url ) ); ?>">View all</a>
+						<h2>Editor's Picks</h2>
+						<p class="aw-hint">Projects our editorial team is watching closely.</p>
 					</div>
-					<div class="aw-trend-grid">
-						<?php foreach ( array_slice( $trending, 0, 6 ) as $i => $card ) : ?>
-							<?php aw_projects_render_trending_card( $card, $i + 1 ); ?>
+					<div class="aw-grid">
+						<?php foreach ( $picks as $card ) : ?>
+							<?php aw_projects_render_card( $card ); ?>
 						<?php endforeach; ?>
 					</div>
 				</section>
@@ -266,6 +280,24 @@ if ( '' !== $category ) {
 				</div>
 			</section>
 
+			<?php
+			$trending = AlphaWire_Projects_Directory_REST::trending( null );
+			if ( $trending ) :
+				?>
+				<section class="aw-section">
+					<div class="aw-section-header">
+						<h2>Trending Projects</h2>
+						<p class="aw-hint">Projects gaining momentum across AlphaWire coverage.</p>
+						<a class="aw-hint aw-view-all" href="<?php echo esc_url( add_query_arg( 'view', 'trending', $archive_url ) ); ?>">View all</a>
+					</div>
+					<div class="aw-trend-grid">
+						<?php foreach ( array_slice( $trending, 0, 6 ) as $i => $card ) : ?>
+							<?php aw_projects_render_trending_card( $card, $i + 1 ); ?>
+						<?php endforeach; ?>
+					</div>
+				</section>
+			<?php endif; ?>
+
 			<section class="aw-section aw-two-col">
 				<div class="aw-panel">
 					<div class="aw-section-header">
@@ -297,23 +329,6 @@ if ( '' !== $category ) {
 					<?php endforeach; ?>
 				</div>
 			</section>
-
-			<?php
-			$picks = AlphaWire_Projects_Directory_REST::editors_picks( null );
-			if ( $picks ) :
-				?>
-				<section class="aw-section">
-					<div class="aw-section-header">
-						<h2>Editor's Picks</h2>
-						<p class="aw-hint">Projects our editorial team is watching closely.</p>
-					</div>
-					<div class="aw-grid">
-						<?php foreach ( $picks as $card ) : ?>
-							<?php aw_projects_render_card( $card ); ?>
-						<?php endforeach; ?>
-					</div>
-				</section>
-			<?php endif; ?>
 
 			<section class="aw-section">
 				<div class="aw-section-header">

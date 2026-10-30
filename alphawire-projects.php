@@ -2,9 +2,26 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.16
+ * Version: 0.9.17
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.17 — ClickUp 1amdve28nvy (Miguel's feedback, via Anke):
+ * reordered the Projects directory homepage (templates/archive-
+ * project.php, the default/"all" view) so curated and discovery
+ * content leads and the full directory sits at the bottom. New
+ * order: Editor's Picks, Top Categories/Trending Narratives,
+ * Trending Projects, Recently Added/Recently Updated, All Projects.
+ * The ticket's 4 named buckets don't separately mention the
+ * standalone "Trending Projects" ranked-cards block, so it stays in
+ * the same discovery cluster as Top Categories/Trending Narratives
+ * (directly after it, not between it and Editor's Picks — keeps the
+ * acceptance criteria's "directly below Editor's Picks" literal).
+ * Pure reorder: no section's markup, data source, filtering or
+ * pagination logic changed — only moved as whole blocks. NOT YET
+ * verified against live staging — same as v0.9.14-16, this plugin
+ * auto-updates from GitHub (see v0.6.0), so it only takes effect
+ * there once pushed.
  *
  * v0.9.16 — ClickUp 1amdve28nwy (Miguel's feedback): renamed the
  * "Recently Launched" section/nav label to "Recently Added" across
@@ -859,7 +876,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.16' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.17' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

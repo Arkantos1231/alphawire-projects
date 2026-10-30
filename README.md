@@ -667,6 +667,12 @@ Miguel marcó que la sección "Recently Launched" engaña: el nombre sugiere fec
 
 Fix: cambio de etiqueta nada más, en los 3 lugares donde aparecía en `templates/archive-project.php` (el ítem de la nav Explore, el título de la vista enfocada cuando ese ítem está activo, y el título del panel en el overview del directory). A propósito deliberado se dejaron sin tocar el valor `view=recently-launched` de la query, la ruta REST `/projects/recently-launched` y el método `recently_launched()` — renombrar eso sería un cambio de URL/API, fuera del alcance del ticket y con riesgo de romper links existentes. **Todavía sin verificar en staging** — igual que v0.9.14/v0.9.15, el plugin se auto-actualiza desde GitHub, así que esto no se ve en vivo hasta que se suba.
 
+### v0.9.17 — Reorden de la homepage del Directory (feedback de Miguel, ClickUp `1amdve28nvy`)
+
+Miguel pidió priorizar contenido curado/de descubrimiento antes que el directorio completo, para guiar mejor a los visitantes nuevos.
+
+Fix: reordené las secciones de la vista por defecto de `/projects/` (`templates/archive-project.php`) a: Editor's Picks, Top Categories/Trending Narratives, Trending Projects, Recently Added/Recently Updated, All Projects. El ticket no menciona por separado el bloque de "Trending Projects" (tarjetas rankeadas) dentro de sus 4 categorías, así que lo dejé dentro del mismo clúster de descubrimiento, justo después de Top Categories/Trending Narratives — para que ese bloque quede literalmente "directo debajo" de Editor's Picks, como pide el criterio de aceptación. Es un reorden puro: no cambié el markup, la fuente de datos, el filtrado ni la paginación de ninguna sección, solo las moví como bloques completos. **Todavía sin verificar en staging** — igual que v0.9.14-16, el plugin se auto-actualiza desde GitHub, así que esto no se ve en vivo hasta que se suba.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace
