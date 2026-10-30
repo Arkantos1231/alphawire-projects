@@ -2,9 +2,28 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.14
+ * Version: 0.9.15
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.15 — ClickUp 1amdve28nqp: the Projects directory search bar
+ * (.aw-searchbar in templates/archive-project.php) had a too-small,
+ * barely-visible 40px button sitting in an unevenly-padded 8px/8px/
+ * 8px/16px bar that came out ~56px tall, with a 24px icon nearly
+ * filling the button edge to edge. Fix: bar is now a fixed 48px tall
+ * with even 4px padding on all sides (the 40px button already met
+ * the ticket's "at least 36x36", and 4 + 40 + 4 = 48 lines it up
+ * exactly flush top/bottom — no button resize needed); the input
+ * keeps an 8px left inset of its own so text doesn't start flush
+ * against the now-tighter bar padding; the button's search icon
+ * drops from the default 24px to 14px per spec. Verified with a
+ * Playwright harness using the real markup and the real projects.css
+ * (not a live page — same reasoning as the v0.9.10-13 cascade-fix
+ * harnesses): measured bar height 48px, button 40x40, icon 14x14 at
+ * 0px offset from the button's centre on both ends, no overflow at a
+ * 340px container width. NOT YET re-confirmed on live staging — same
+ * as v0.9.14, this plugin auto-updates from GitHub (see v0.6.0), so
+ * it only takes effect there once pushed.
  *
  * v0.9.14 — AI Summary generation was failing outright: "Generate /
  * refresh draft" (and the weekly auto-fill cron) both hit Claude's API
@@ -825,7 +844,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.14' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.15' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

@@ -641,6 +641,12 @@ Causa: forzar `stroke: currentColor !important` en **todos** los `<path>` (neces
 
 Fix: `.aw-projects.aw-projects.aw-projects svg path:first-child { stroke: none !important; }` — re-silencia solo ese primer path. `:first-child` también cuenta como una "clase" más para la especificidad, así que esta regla sigue ganándole tanto a la regla general de arriba como a la del theme. Verificado con el mismo harness de Playwright (projects.css + stub de ambas reglas del theme en competencia): los íconos quedan como line-art limpio, sin cuadro.
 
+### v0.9.13 — El hover de "Report an issue" seguía rosa
+
+Un nivel más abajo del mismo problema de v0.9.10-12: el theme también tiene su propia regla `[type=button]:hover, [type=submit]:hover, button:hover` (pone `color` + `background-color`, sin `!important`), que empata en especificidad con las reglas base (sin `:hover`) de estos botones — y gana por orden de carga en cualquier propiedad que solo el theme defina en hover. Mis reglas de `:hover` existentes solo reafirmaban `color`, no `background`, así que el fondo rosa del theme se seguía viendo al pasar el mouse sobre "Report an issue" y "Close"; y `Submit report` directamente no tenía su propia regla de `:hover`, así que perdía las dos propiedades.
+
+Fix: cada regla de `:hover`/`:focus-visible` de estos cuatro botones ahora reafirma tanto `color` como `background` (Cancel también necesitó `border-color` de nuevo, mismo motivo). Verificado con el harness de Playwright usando `CSS.forcePseudoState` de CDP para forzar el estado `:hover` real contra el stub de las reglas del theme — ya no sale rosa en ningún estado de ninguno de los cuatro botones.
+
 ### v0.9.14 — "Generate / refresh draft" del AI Summary fallaba con error
 
 Julian reportó que al intentar generar un AI Summary salía un error en el metabox: `'temperature' is deprecated for this model`.
@@ -649,11 +655,11 @@ Causa: tanto `class-ai-summary-service.php::generate_draft()` (el AI Summary del
 
 Fix: se quitó `temperature` de ambos request bodies; sin ese parámetro la API usa su propio sampling por defecto, y no cambia nada más de la llamada ni del formato de salida. **Todavía sin verificar en staging** — el plugin se auto-actualiza desde GitHub (ver v0.6.0), así que el fix no toma efecto ahí hasta que esto se suba. Una vez en vivo, confirmar haciendo clic en "Generate / refresh draft" sobre cualquier Project: el status debería pasar directo a "Pending Review" con texto real, sin el error de temperature.
 
-### v0.9.13 — El hover de "Report an issue" seguía rosa
+### v0.9.15 — Barra de búsqueda del Directory: botón/ícono muy chicos, padding disparejo (ClickUp `1amdve28nqp`)
 
-Un nivel más abajo del mismo problema de v0.9.10-12: el theme también tiene su propia regla `[type=button]:hover, [type=submit]:hover, button:hover` (pone `color` + `background-color`, sin `!important`), que empata en especificidad con las reglas base (sin `:hover`) de estos botones — y gana por orden de carga en cualquier propiedad que solo el theme defina en hover. Mis reglas de `:hover` existentes solo reafirmaban `color`, no `background`, así que el fondo rosa del theme se seguía viendo al pasar el mouse sobre "Report an issue" y "Close"; y `Submit report` directamente no tenía su propia regla de `:hover`, así que perdía las dos propiedades.
+El botón de búsqueda de 40px casi no se notaba dentro de la barra — el padding era disparejo (`8px 8px 8px 16px`, 16px solo a la izquierda) y la barra entera terminaba midiendo ~56px de alto en vez de los 48px pedidos; el ícono de la lupa, a 24px, casi llenaba el botón de borde a borde.
 
-Fix: cada regla de `:hover`/`:focus-visible` de estos cuatro botones ahora reafirma tanto `color` como `background` (Cancel también necesitó `border-color` de nuevo, mismo motivo). Verificado con el harness de Playwright usando `CSS.forcePseudoState` de CDP para forzar el estado `:hover` real contra el stub de las reglas del theme — ya no sale rosa en ningún estado de ninguno de los cuatro botones.
+Fix: la barra ahora mide 48px fijos, con 4px de padding parejo en los cuatro lados (el botón de 40px ya cumplía el “mínimo 36x36” del ticket, y 4 + 40 + 4 = 48 lo deja exactamente al ras arriba/abajo — no hizo falta tocar su tamaño). El input mantiene 8px de margen izquierdo propio para que el texto no arranque pegado al nuevo padding, más ajustado, de la barra. El ícono de búsqueda del botón baja de 24px a 14px, como pide el ticket. Verificado con un harness de Playwright usando el markup real y el `projects.css` real (no la página en vivo, mismo criterio que los harnesses de v0.9.10-13): barra a 48px, botón 40×40, ícono 14×14 con 0px de offset respecto al centro del botón, sin overflow a 340px de ancho. **Todavía sin re-confirmar en staging** — igual que v0.9.14, el plugin se auto-actualiza desde GitHub, así que esto no se ve en vivo hasta que se suba.
 
 ## Arquitectura: endpoints propios y datos de mercado
 

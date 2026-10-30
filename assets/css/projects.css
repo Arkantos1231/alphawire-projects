@@ -390,6 +390,12 @@
 	max-width: 560px;
 }
 
+/* ClickUp 1amdve28nqp: button/icon were too small relative to the
+   input, and the 16px-left/8px-elsewhere padding was uneven and
+   oversized — the whole bar came out ~56px tall. Fixed height: 48px,
+   even 4px padding on all sides. That 4px padding is also what keeps
+   the 40px button (unchanged — already satisfies the ticket's
+   "at least 36x36") exactly flush top/bottom: 4 + 40 + 4 = 48. */
 .aw-searchbar {
 	display: flex;
 	align-items: center;
@@ -397,7 +403,9 @@
 	background: var(--aw-surface);
 	border: 1px solid var(--aw-border);
 	border-radius: 999px;
-	padding: 8px 8px 8px 16px;
+	box-sizing: border-box;
+	height: 48px;
+	padding: 4px;
 	flex: 0 1 380px;
 }
 
@@ -408,6 +416,13 @@
 	color: var(--aw-text);
 	font-size: 13px;
 	outline: none;
+	/* ClickUp 1amdve28nqp: the 16px fixed left padding this used to
+	   inherit from .aw-searchbar's old padding shorthand read as
+	   excessive once the bar's own padding dropped to 4px all round;
+	   this keeps the input text sitting at a normal reading distance
+	   from the bar's rounded left edge without re-widening the bar's
+	   own padding (which would also push the button off-centre). */
+	padding-left: 8px;
 }
 
 /* ClickUp 1amdve27n1r: the "⌕" glyph had no explicit size of its own

@@ -122,7 +122,18 @@ if ( '' !== $category ) {
 				<?php if ( '' !== $narrative ) : ?>
 					<input type="hidden" name="narrative" value="<?php echo esc_attr( $narrative ); ?>" />
 				<?php endif; ?>
-				<button type="submit" aria-label="Search"><?php aw_projects_icon( 'search' ); ?></button>
+				<button type="submit" aria-label="Search">
+					<?php
+					/**
+					 * ClickUp 1amdve28nqp: was the default 24px — nearly filling
+					 * the 40px button edge-to-edge and reading as oversized/
+					 * off-centre next to the now-48px-tall bar. 14px per the
+					 * ticket's spec, still centred by the button's own flex
+					 * centring (unchanged).
+					 */
+					aw_projects_icon( 'search', 14 );
+					?>
+				</button>
 			</form>
 		</div>
 
