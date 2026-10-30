@@ -661,6 +661,12 @@ El botón de búsqueda de 40px casi no se notaba dentro de la barra — el paddi
 
 Fix: la barra ahora mide 48px fijos, con 4px de padding parejo en los cuatro lados (el botón de 40px ya cumplía el “mínimo 36x36” del ticket, y 4 + 40 + 4 = 48 lo deja exactamente al ras arriba/abajo — no hizo falta tocar su tamaño). El input mantiene 8px de margen izquierdo propio para que el texto no arranque pegado al nuevo padding, más ajustado, de la barra. El ícono de búsqueda del botón baja de 24px a 14px, como pide el ticket. Verificado con un harness de Playwright usando el markup real y el `projects.css` real (no la página en vivo, mismo criterio que los harnesses de v0.9.10-13): barra a 48px, botón 40×40, ícono 14×14 con 0px de offset respecto al centro del botón, sin overflow a 340px de ancho. **Todavía sin re-confirmar en staging** — igual que v0.9.14, el plugin se auto-actualiza desde GitHub, así que esto no se ve en vivo hasta que se suba.
 
+### v0.9.16 — "Recently Launched" ahora es "Recently Added" (feedback de Miguel, ClickUp `1amdve28nwy`)
+
+Miguel marcó que la sección "Recently Launched" engaña: el nombre sugiere fecha de lanzamiento en el mercado, pero esta vista siempre ordenó por fecha de creación del Project en el sistema.
+
+Fix: cambio de etiqueta nada más, en los 3 lugares donde aparecía en `templates/archive-project.php` (el ítem de la nav Explore, el título de la vista enfocada cuando ese ítem está activo, y el título del panel en el overview del directory). A propósito deliberado se dejaron sin tocar el valor `view=recently-launched` de la query, la ruta REST `/projects/recently-launched` y el método `recently_launched()` — renombrar eso sería un cambio de URL/API, fuera del alcance del ticket y con riesgo de romper links existentes. **Todavía sin verificar en staging** — igual que v0.9.14/v0.9.15, el plugin se auto-actualiza desde GitHub, así que esto no se ve en vivo hasta que se suba.
+
 ## Arquitectura: endpoints propios y datos de mercado
 
 El plugin expone sus propios endpoints REST bajo el namespace

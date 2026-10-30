@@ -2,9 +2,24 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.15
+ * Version: 0.9.16
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.16 — ClickUp 1amdve28nwy (Miguel's feedback): renamed the
+ * "Recently Launched" section/nav label to "Recently Added" across
+ * templates/archive-project.php (Explore nav item, the focused-view
+ * heading when that nav item is active, and the directory overview's
+ * own panel heading) — the old name implied market launch date, but
+ * this view has always sorted by when a Project was created in the
+ * system. Label-only: the `view=recently-launched` query value, the
+ * `/projects/recently-launched` REST route and
+ * AlphaWire_Projects_Directory_REST::recently_launched() are all
+ * unchanged on purpose — renaming those would be a URL/API change,
+ * out of scope here and a risk to any existing links. NOT YET
+ * verified against live staging — same as v0.9.14/v0.9.15, this
+ * plugin auto-updates from GitHub (see v0.6.0), so it only takes
+ * effect there once pushed.
  *
  * v0.9.15 — ClickUp 1amdve28nqp: the Projects directory search bar
  * (.aw-searchbar in templates/archive-project.php) had a too-small,
@@ -844,7 +859,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.15' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.16' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 

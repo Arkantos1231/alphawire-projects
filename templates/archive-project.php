@@ -84,8 +84,20 @@ if ( '' !== $category ) {
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-updated' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-updated', $archive_url ) ); ?>">
 					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'refresh' ); ?></span> Recently Updated
 				</a>
+				<?php
+				/**
+				 * ClickUp 1amdve28nwy (Miguel's feedback): "Recently Launched"
+				 * implied market launch date, but this view sorts by when a
+				 * Project was CREATED in the system (unchanged — this is a
+				 * label-only rename, same as the two headings further down).
+				 * The `view=recently-launched` query value, REST route and
+				 * recently_launched() method name are all left as-is on
+				 * purpose: renaming those would be a URL/API change, which is
+				 * out of scope and risks breaking existing links.
+				 */
+				?>
 				<a class="aw-nav-item<?php echo ( ! $filters_active && 'recently-launched' === $view ) ? ' is-active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'view', 'recently-launched', $archive_url ) ); ?>">
-					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'sparkles' ); ?></span> Recently Launched
+					<span class="aw-nav-icon" aria-hidden="true"><?php aw_projects_icon( 'sparkles' ); ?></span> Recently Added
 				</a>
 			</div>
 		</div>
@@ -194,7 +206,7 @@ if ( '' !== $category ) {
 
 			<?php $focused = AlphaWire_Projects_Directory_REST::recently_launched( null ); ?>
 			<section class="aw-section">
-				<div class="aw-section-header"><h2>Recently Launched</h2></div>
+				<div class="aw-section-header"><h2>Recently Added</h2></div>
 				<?php if ( $focused ) : ?>
 					<div class="aw-grid">
 						<?php foreach ( $focused as $card ) : ?>
@@ -257,7 +269,7 @@ if ( '' !== $category ) {
 			<section class="aw-section aw-two-col">
 				<div class="aw-panel">
 					<div class="aw-section-header">
-						<h2>Recently Launched</h2>
+						<h2>Recently Added</h2>
 						<a class="aw-hint" href="<?php echo esc_url( add_query_arg( 'view', 'recently-launched', $archive_url ) ); ?>">View all</a>
 					</div>
 					<?php foreach ( AlphaWire_Projects_Directory_REST::recently_launched( null ) as $card ) : ?>
