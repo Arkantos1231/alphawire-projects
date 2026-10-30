@@ -338,7 +338,9 @@ class AlphaWire_Projects_Smart_Money_Service {
 				'body'    => wp_json_encode(
 					array(
 						'model'       => AlphaWire_Projects_Settings::get_model(),
-						'temperature' => 0.4,
+						// `temperature` removed (v0.9.14) — same fix as
+						// class-ai-summary-service.php::generate_draft(), see that file
+						// for why.
 						'max_tokens'  => 60,
 						'system'      => 'You write single-sentence, factual Smart Money activity summaries for AlphaWire. Use ONLY the numbers given to you — never invent facts.',
 						'messages'    => array(

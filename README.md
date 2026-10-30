@@ -641,6 +641,14 @@ Causa: forzar `stroke: currentColor !important` en **todos** los `<path>` (neces
 
 Fix: `.aw-projects.aw-projects.aw-projects svg path:first-child { stroke: none !important; }` — re-silencia solo ese primer path. `:first-child` también cuenta como una "clase" más para la especificidad, así que esta regla sigue ganándole tanto a la regla general de arriba como a la del theme. Verificado con el mismo harness de Playwright (projects.css + stub de ambas reglas del theme en competencia): los íconos quedan como line-art limpio, sin cuadro.
 
+### v0.9.14 — "Generate / refresh draft" del AI Summary fallaba con error
+
+Julian reportó que al intentar generar un AI Summary salía un error en el metabox: `'temperature' is deprecated for this model`.
+
+Causa: tanto `class-ai-summary-service.php::generate_draft()` (el AI Summary del Project) como `class-smart-money-service.php` (el blurb de Smart Money/Nansen, desactivado por defecto) mandaban `'temperature' => 0.4` fijo en el body de la Messages API de Claude. El modelo configurado (`claude-sonnet-5` por defecto) ahora rechaza ese parámetro en vez de aceptarlo silenciosamente, así que cada llamada volvía como error — tanto el botón manual como el cron semanal de auto-fill.
+
+Fix: se quitó `temperature` de ambos request bodies; sin ese parámetro la API usa su propio sampling por defecto, y no cambia nada más de la llamada ni del formato de salida. **Todavía sin verificar en staging** — el plugin se auto-actualiza desde GitHub (ver v0.6.0), así que el fix no toma efecto ahí hasta que esto se suba. Una vez en vivo, confirmar haciendo clic en "Generate / refresh draft" sobre cualquier Project: el status debería pasar directo a "Pending Review" con texto real, sin el error de temperature.
+
 ### v0.9.13 — El hover de "Report an issue" seguía rosa
 
 Un nivel más abajo del mismo problema de v0.9.10-12: el theme también tiene su propia regla `[type=button]:hover, [type=submit]:hover, button:hover` (pone `color` + `background-color`, sin `!important`), que empata en especificidad con las reglas base (sin `:hover`) de estos botones — y gana por orden de carga en cualquier propiedad que solo el theme defina en hover. Mis reglas de `:hover` existentes solo reafirmaban `color`, no `background`, así que el fondo rosa del theme se seguía viendo al pasar el mouse sobre "Report an issue" y "Close"; y `Submit report` directamente no tenía su propia regla de `:hover`, así que perdía las dos propiedades.

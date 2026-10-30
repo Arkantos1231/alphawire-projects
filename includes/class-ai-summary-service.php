@@ -200,7 +200,12 @@ class AlphaWire_Projects_AI_Summary_Service {
 				'body'    => wp_json_encode(
 					array(
 						'model'       => AlphaWire_Projects_Settings::get_model(),
-						'temperature' => 0.4,
+						// `temperature` removed (v0.9.14): Claude started rejecting it
+						// as a deprecated parameter for the configured model (error seen
+						// in wp-admin: "'temperature' is deprecated for this model"),
+						// which meant every AI Summary generation attempt failed. Omitting
+						// it just falls back to the API's own default sampling — nothing
+						// else about the request or its output format changes.
 						'max_tokens'  => 220,
 						// The Messages API takes the system prompt as its own
 						// top-level field — not a "system"-role message inside

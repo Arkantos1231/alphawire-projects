@@ -2,9 +2,29 @@
 /**
  * Plugin Name: AlphaWire Projects
  * Description: Registers the AlphaWire "Project" entity (directory + profile pages), reuses the site's existing Pillar/Topic taxonomies, syncs market data from CoinGecko, and generates draft AI Project Summaries via Claude.
- * Version: 0.9.13
+ * Version: 0.9.14
  * Author: AlphaWire
  * Text Domain: alphawire-projects
+ *
+ * v0.9.14 — AI Summary generation was failing outright: "Generate /
+ * refresh draft" (and the weekly auto-fill cron) both hit Claude's API
+ * and got back an error instead of a draft. Root cause: both
+ * class-ai-summary-service.php::generate_draft() and
+ * class-smart-money-service.php (the Nansen Smart Money blurb, gated
+ * off by default) hardcoded `'temperature' => 0.4` in the Messages API
+ * request body. The configured model (claude-sonnet-5 by default, see
+ * class-settings.php) now rejects that parameter outright rather than
+ * silently accepting it, so every request came back as an error
+ * (surfaced in wp-admin via the existing "Last error" line the AI
+ * Summary metabox already shows — no new error-handling needed). Fix:
+ * drop the `temperature` key from both request bodies and let the API
+ * use its own default sampling — nothing else about either request,
+ * its prompt, or its output format changes. NOT YET verified against
+ * live staging — this plugin auto-updates from GitHub (see v0.6.0),
+ * so the fix only takes effect there after this is pushed. Once it is
+ * live, confirm by clicking "Generate / refresh draft" on any Project:
+ * status should move straight to "Pending Review" with real summary
+ * text instead of showing the temperature error again.
  *
  * v0.9.13 — Julian caught one more spot of pink: hovering "Report an
  * issue" still showed the theme's pink fill. Root cause is the same
@@ -805,7 +825,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.13' );
+define( 'ALPHAWIRE_PROJECTS_VERSION', '0.9.14' );
 define( 'ALPHAWIRE_PROJECTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALPHAWIRE_PROJECTS_URL', plugin_dir_url( __FILE__ ) );
 
